@@ -2,67 +2,12 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Grist Smart Calendar</title>
+  <title>Grist Calendar Widget</title>
+  <link href="screen.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-  <style>
-    html, body { margin: 0; padding: 0; height: 100%; }
-    #calendar { height: 100%; }
-  </style>
+  <script src="page.js"></script>
 </head>
 <body>
   <div id="calendar"></div>
-  <script>
-    let gristDoc;
-    let options = {};
-    let events = [];
-
-    function renderCalendar() {
-      const calendarEl = document.getElementById('calendar');
-      const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        events: events,
-        eventClick: function(info) {
-          const recordId = info.event.extendedProps._gristRecord;
-          if (!recordId) return;
-
-          if (options.targetPages?.length > 1) {
-            const selected = prompt("Select target page:\n" + options.targetPages.join("\n"));
-            if (!selected || !options.targetPages.includes(selected)) return;
-            gristDoc.setActivePage(selected);
-            gristDoc.docApi.setCursorPos(0, recordId - 1);
-          } else {
-            const target = options.targetPages?.[0];
-            if (target) {
-              gristDoc.setActivePage(target);
-              gristDoc.docApi.setCursorPos(0, recordId - 1);
-            }
-          }
-        }
-      });
-      calendar.render();
-    }
-
-    window.addEventListener("message", (event) => {
-      if (event.data.tableId && event.data.records) {
-        events = event.data.records.map(r => ({
-          title: r.fields.Title || "Untitled",
-          start: r.fields.StartDate,
-          end: r.fields.EndDate,
-          _gristRecord: r.id
-        }));
-        renderCalendar();
-      }
-    });
-
-    window.addEventListener("load", () => {
-      grist.ready();
-      grist.onOptions((opts) => {
-        options = opts;
-      });
-      grist.onRecord((record, mappings) => {});
-      grist.onRecords((records, mappings) => {});
-      gristDoc = grist;
-    });
-  </script>
 </body>
 </html>
