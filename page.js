@@ -4,11 +4,16 @@ let options = {};
 let gristDoc;
 
 function updateCalendar(records, mappings) {
-  const columns = mappings.columns;
-  const titleCol = columns.title;
-  const startCol = columns.startDate;
-  const endCol = columns.endDate;
-  const colorCol = columns.type;
+  const fields = mappings?.columns || {};
+  const titleCol = fields.title;
+  const startCol = fields.startDate;
+  const endCol = fields.endDate;
+  const colorCol = fields.type;
+
+  if (!startCol || !titleCol) {
+    document.getElementById("calendar").innerHTML = "<p style='padding:1em;'>Missing required column settings (start date or title).</p>";
+    return;
+  }
 
   const events = records.map(r => ({
     title: r.fields[titleCol] || "(untitled)",
@@ -62,13 +67,11 @@ window.addEventListener("load", function () {
   });
 
   grist.onColumns(function(mappings) {
-    if (!mappings.columns?.startDate || !mappings.columns?.title) {
-      document.getElementById("calendar").innerHTML = "<p style='padding:1em;'>Missing required column settings (start date or title).</p>";
-      return;
-    }
     initCalendar();
+    grist.onRecords(function(records) {
+      updateCalendar(records, mappings);
+    });
   });
 
-  grist.onRecords(updateCalendar);
   gristDoc = grist;
 });
