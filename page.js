@@ -619,58 +619,6 @@ function getGristOptions() {
       type: "Choice,ChoiceList",
       description: t("event category and style"),
       allowMultiple: false
-    },
-// RapidShade GEM page.js (around line 328, after the 'type' object)
-    // New properties for Double-Click Target 1
-    {
-      name: "targetPage1",
-      title: t("Target Page 1"),
-      optional: true,
-      type: "Any",
-      description: t("Name of the first page to navigate to on double-click."),
-      allowMultiple: false
-    },
-    {
-      name: "targetIdField1",
-      title: t("ID Field 1"),
-      optional: true,
-      type: "Any",
-      description: t("Name of the ID column on Target Page 1 for record lookup."),
-      allowMultiple: false
-    },
-    // New properties for Double-Click Target 2
-    {
-      name: "targetPage2",
-      title: t("Target Page 2"),
-      optional: true,
-      type: "Any",
-      description: t("Name of the second page to navigate to on double-click."),
-      allowMultiple: false
-    },
-    {
-      name: "targetIdField2",
-      title: t("ID Field 2"),
-      optional: true,
-      type: "Any",
-      description: t("Name of the ID column on Target Page 2 for record lookup."),
-      allowMultiple: false
-    },
-    // New properties for Double-Click Target 3
-    {
-      name: "targetPage3",
-      title: t("Target Page 3"),
-      optional: true,
-      type: "Any",
-      description: t("Name of the third page to navigate to on double-click."),
-      allowMultiple: false
-    },
-    {
-      name: "targetIdField3",
-      title: t("ID Field 3"),
-      optional: true,
-      type: "Any",
-      description: t("Name of the ID column on Target Page 3 for record lookup."),
-      allowMultiple: false
     }
   ];
 }
@@ -721,10 +669,66 @@ async function configureGristSettings() {
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
   grist.enableKeyboardShortcuts?.();
 
+//  // bind columns mapping options to the GUI
+//  const columnsMappingOptions = getGristOptions();
+//  grist.ready({requiredAccess: 'full', columns: columnsMappingOptions, allowSelectBy: true});
+
+// RapidShade GEM - page.js (inside configureGristSettings, modify the grist.ready() call, around line 372)
+
   // bind columns mapping options to the GUI
   const columnsMappingOptions = getGristOptions();
-  grist.ready({requiredAccess: 'full', columns: columnsMappingOptions, allowSelectBy: true});
-}
+
+  // Define our custom user attributes for page/field selection
+  const customUserAttributes = {
+    // New properties for Double-Click Target 1
+    targetPage1: {
+      type: 'text', // <-- Use 'text' here for a plain text input box
+      title: t("Target Page 1"),
+      description: t("Name of the first page to navigate to on double-click."),
+      group: t("Double-Click Actions") // Optional: group these settings in the UI
+    },
+    targetIdField1: {
+      type: 'text', // <-- Use 'text' here for a plain text input box
+      title: t("ID Field 1"),
+      description: t("Name of the ID column on Target Page 1 for record lookup."),
+      group: t("Double-Click Actions")
+    },
+    // New properties for Double-Click Target 2
+    targetPage2: {
+      type: 'text',
+      title: t("Target Page 2"),
+      description: t("Name of the second page to navigate to on double-click."),
+      group: t("Double-Click Actions")
+    },
+    targetIdField2: {
+      type: 'text',
+      title: t("ID Field 2"),
+      description: t("Name of the ID column on Target Page 2 for record lookup."),
+      group: t("Double-Click Actions")
+    },
+    // New properties for Double-Click Target 3
+    targetPage3: {
+      type: 'text',
+      title: t("Target Page 3"),
+      description: t("Name of the third page to navigate to on double-click."),
+      group: t("Double-Click Actions")
+    },
+    targetIdField3: {
+      type: 'text',
+      title: t("ID Field 3"),
+      description: t("Name of the ID column on Target Page 3 for record lookup."),
+      group: t("Double-Click Actions")
+    }
+  };
+
+  grist.ready({
+    requiredAccess: 'full',
+    columns: columnsMappingOptions, // This defines the column mapping dropdowns
+    userAttributes: customUserAttributes, // This defines our custom text inputs
+    allowSelectBy: true
+  });
+} // End of configureGristSettings function (ensure this brace is correctly placed)
+//}
 
 async function translatePage() {
 
