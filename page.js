@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID_3_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // KEEP THIS LINE AT THE VERY TOP
+console.log("RapidShade: page.js version - " + new Date().toLocaleTimeString()); // KEEP THIS LINE AT THE VERY TOP
 
 let calendarHandler;
 
@@ -26,7 +26,7 @@ window.gristCalendar = {
   doubleClickActionTargetIdField3: undefined,
 };
 
-let TZDate = null;
+let TZDate = null; // Will be set by tui.Calendar initialization
 
 function getLanguage() {
   if (this._lang) {
@@ -65,12 +65,13 @@ function getMonthName() {
 class CalendarHandler {
   //TODO: switch to new variables once they are published.
   _mainColor =  'var(--grist-theme-input-readonly-border)';
-    _calendarBackgroundColor =  'var(--grist-theme-page-panels-main-panel-bg)';
+  _calendarBackgroundColor =  'var(--grist-theme-page-panels-main-panel-bg)';
   _selectedColor = 'var(--grist-theme-top-bar-button-primary-fg)';
   _borderStyle =  '1px solid var(--grist-theme-table-body-border)';
   _accentColor =  'var(--grist-theme-accent-text)';
   _textColor =  'var(--grist-theme-text)';
   _selectionColor =  'var(--grist-theme-selection)';
+
   _calendarTheme = () => {return {
     common: {
       backgroundColor: this._calendarBackgroundColor,
@@ -384,8 +385,6 @@ class CalendarHandler {
     }
   }
 
-// page.js (inside CalendarHandler class, e.g., after refreshSelectedRecord, around line 269)
-
   async handleDoubleClickAction(recordId) {
     const targets = this._doubleClickTargets;
 
@@ -417,11 +416,19 @@ class CalendarHandler {
       // and that the `recordId` from the calendar *is* a value in that `idFieldName` column.
       // If your target table uses a *different* ID for the same logical record,
       // you would need more advanced logic involving fetching the target table and performing a lookup.
+      // For now, `grist.setSelectedRows` works best when the `recordId` from the calendar *is* the
+      // actual rowId in the target table or a primary key directly matched by Grist.
+      // If `idFieldName` is the primary key column (or a unique value column),
+      // `grist.setSelectedRows` can be used to select a row based on a value in that column.
+      // However, grist.setSelectedRows directly uses Grist's internal row IDs for the current table.
+      // To select by a different field's value, we'd need to fetch data on the target page.
+      // For now, assuming `recordId` (from the event) is the grist row ID or a unique ID that
+      // can be used by grist.setSelectedRows after navigation.
+
+      // First navigate to the page
       await grist.navigate({ page: pageName });
 
-      // After navigating, we need to find the specific row in the new table based on idFieldName.
-      // For simplicity, we will assume `recordId` passed from the calendar *is* the Grist `rowId`
-      // for the target table as well.
+      // After navigating, attempt to select the row by recordId (which should be the Grist rowId)
       await grist.setSelectedRows([recordId]);
 
       console.log(`RapidShade: Mapped to page "${pageName}" and attempted to select record with ID: ${recordId} using field: ${idFieldName}`);
@@ -518,7 +525,6 @@ class CalendarHandler {
   getEvents() { return this._allEvents; }
   setEvents(events) { this._allEvents = events; }
 
-  // RapidShade - GEM - page.js (inside CalendarHandler class, e.g., after setEvents, around line 273)
   _doubleClickTargets = []; // Initialize an internal property to store the targets
   setDoubleClickTargets(targets) {
     this._doubleClickTargets = targets;
@@ -569,7 +575,6 @@ function getGristOptions() {
     { name: "isAllDay", title: t("Is All Day"), optional: true, type: "Bool", description: t("is event all day long"), strictType: true },
     { name: "title", title: t("Title"), optional: false, type: "Text", description: t("title of event"), allowMultiple: false },
     { name: "type", title: t("Type"), optional: true, type: "Choice,ChoiceList", description: t("event category and style"), allowMultiple: false },
-    // RapidShade - GEM - page.js (around line 328, after the 'type' object)
     // New properties for Double-Click Target 1
     { name: "targetPage1", title: t("Target Page 1"), optional: true, type: "Text", description: t("Name of the first page to navigate to on double-click."), allowMultiple: false },
     { name: "targetIdField1", title: t("ID Field 1"), optional: true, type: "Text", description: t("Name of the ID column on Target Page 1 for record lookup."), allowMultiple: false },
@@ -591,7 +596,7 @@ function updateUIAfterNavigation() {
 }
 
 // --- DEFINE columnsMappingOptions BEFORE ready() if it's a global constant ---
-const columnsMappingOptions = getGristOptions(); // columnsMappingOptions should be derived from getGristOptions()
+const columnsMappingOptions = getGristOptions();
 
 // This function should ONLY set up Grist listeners
 async function configureGristSettings() {
@@ -611,8 +616,8 @@ async function configureGristSettings() {
   // This is the correct place for the grist.on("userAttributes") listener
   // IMPORTANT: userAttrs directly contains the custom options from manifest.json
   grist.on("userAttributes", function(userAttrs) {
-    console.log("RapidShade: Received user attributes:", userAttrs); // THIS SHOULD FINALLY FIRE!
-    const options = userAttrs || {}; // userAttrs directly contains the custom options
+    console.log("RapidShade: Received user attributes:", userAttrs);
+    const options = userAttrs || {};
 
     window.gristCalendar.doubleClickActionTargetPage1 = options.targetPage1;
     window.gristCalendar.doubleClickActionTargetIdField1 = options.targetIdField1;
@@ -654,20 +659,21 @@ async function configureGristSettings() {
     } else {
       console.warn("RapidShade: calendarHandler not yet initialized when userAttributes received. Targets will be set on initialization.");
     }
-    // ==========================================================
   });
 }
 
 // Function to put focus on the widget whenever clicked or a row is selected programmatically.
 function focusWidget() {
-  // === THIS IS THE CORRECTED LINE ===
   grist.setAccessLevel('full');
 }
 
 // Fetches all records from the mapped table and updates the calendar.
 // Called on grist.onRecords, and also initially.
 async function updateCalendar(records, mappings) {
-  const currentMappings = mappings; // Stored here for `gristSelectedRecordChanged` to have access
+  // Pass mappings to colTypesFetcher (CRUCIAL FIX)
+  colTypesFetcher.setMappings(mappings);
+  const currentMappings = mappings;
+
   if (records.length > 0) {
     const [startType, endType] = await colTypesFetcher.getColTypes();
     const events = new Map();
@@ -683,7 +689,7 @@ async function updateCalendar(records, mappings) {
           end: new TZDate(endDate),
           isAllDay: record.isAllDay ?? false,
           category: record.isAllDay ? 'allday' : 'time',
-          backgroundColor: record.type && grist.getMappings().type.color, // Corrected access here too
+          backgroundColor: record.type && currentMappings.type && grist.columnTypes.get(currentMappings.type) && grist.columnTypes.get(currentMappings.type).type === 'Choice' && grist.columnTypes.get(currentMappings.type).choices.find(c => c.value === record.type)?.color,
           raw: record, // Original record, for convenience
         });
       }
@@ -710,7 +716,7 @@ async function updateCalendar(records, mappings) {
   }
   // The first time that updateCalendar is called, it happens before onRecord, so we need to select the record
   // explicitly in case we need to select something.
-  gristSelectedRecordChanged(grist.getCursorPos().rowId); // Corrected access here too
+  gristSelectedRecordChanged(grist.getCursorPos().rowId);
 }
 
 // Adjusts date depending on column type (Date vs DateTime).
@@ -721,7 +727,7 @@ function getAdjustedDate(date, colType) {
 
 // When selected record changes in the Grist table.
 async function gristSelectedRecordChanged(rowId) {
-  const record = grist.getRecords().get(rowId); // Corrected access here too
+  const record = grist.getRecords().get(rowId);
   if (record) {
     await calendarHandler.selectRecord(record);
     calendarHandler.refreshSelectedRecord();
@@ -730,6 +736,9 @@ async function gristSelectedRecordChanged(rowId) {
 
 // Updates the calendar view when the widget settings (options) change.
 async function onGristSettingsChanged(options, mappings) {
+  // Pass mappings to colTypesFetcher (CRUCIAL FIX)
+  colTypesFetcher.setMappings(mappings);
+
   if (options.defaultView && calendarHandler.calendar.getViewName() !== options.defaultView) {
     calendarHandler.changeView(options.defaultView);
   }
@@ -776,6 +785,57 @@ async function onGristSettingsChanged(options, mappings) {
       calendarHandler.calendar.setTheme(calendarHandler._calendarTheme());
   }
 }
+
+
+// ColTypesFetcher object to determine if date columns are Date or DateTime
+const colTypesFetcher = {
+  _colTypes: ['Date', 'Date'], // Default values for startDate, endDate.
+  _tableId: null,
+  _currentMappings: null, // NEW: Store current mappings received from Grist
+
+  setMappings(mappings) { // NEW: Method to set mappings from Grist callbacks
+    this._currentMappings = mappings;
+  },
+
+  async gotNewMappings(tableId) {
+    this._tableId = tableId;
+    await this.fetch();
+  },
+
+  async fetch() {
+    if (!this._tableId || !this._currentMappings) { // Ensure mappings are available before fetching
+      console.log("RapidShade: colTypesFetcher.fetch() - Missing tableId or mappings. Skipping metadata fetch.");
+      return;
+    }
+    const gristDoc = new grist.DocAPI(this._tableId);
+    try {
+      const meta = await gristDoc.fetchTable('GristMetadata');
+      const col = meta.columns.find(c => c.id === '_grist_Datetime');
+      // For older Grist versions, there's no _grist_Datetime table, so treat all as Date.
+      if (!col) {
+        this._colTypes = ['Date', 'Date'];
+        return;
+      }
+      const dateTimeCols = new Set(col.colIds);
+      // Use the stored mappings to determine column types
+      const mappings = this._currentMappings;
+      this._colTypes = [
+        dateTimeCols.has(mappings.startDate) ? 'DateTime' : 'Date',
+        dateTimeCols.has(mappings.endDate) ? 'DateTime' : 'Date',
+      ];
+    } catch (e) {
+      console.log("RapidShade: Failed to fetch column types from GristMetadata", e);
+      this._colTypes = ['Date', 'Date']; // Fallback to Date in case of error
+    }
+  },
+  getColTypes() { return this._colTypes; },
+  setAccessLevel(level) {
+    // If the access level doesn't support fetching metadata, then we don't try to fetch it.
+    if (level === 'none' || level === 'read') {
+      this._tableId = null;
+    }
+  }
+};
 
 
 // --- Grist Widget Configuration (runs once when widget is loaded) ---
@@ -851,15 +911,12 @@ ready(async function() {
 });
 
 
-// RapidShade - GEM - page.js (around line 520, replace the existing dblclick listener content)
-
 document.addEventListener('dblclick', async (ev) => {
   if (!ev.target || !calendarHandler || !calendarHandler.calendar) { return; }
 
   const eventDom = ev.target.closest("[data-event-id]");
   if (!eventDom) {
     // If no event was double-clicked, allow default Grist behavior or do nothing.
-    // The original logic only applied if an event was clicked, we'll follow that.
     return;
   }
 
@@ -878,7 +935,7 @@ document.addEventListener('dblclick', async (ev) => {
 // Helper for upserting events; either creates a new event, or updates an existing one.
 async function upsertEvent(eventInfo) {
   const recordId = eventInfo.id;
-  const raw = eventInfo.raw; // This will contain current values, including unmapped ones
+  // raw contains current values, including unmapped ones. Not directly used for updates.
 
   // Map back to Grist column names
   const updates = {};
@@ -891,14 +948,14 @@ async function upsertEvent(eventInfo) {
     if (recordId) {
       // Update existing record
       await grist.updateRecords({ id: recordId, fields: updates });
-      console.log('Event updated:', recordId, updates);
+      console.log('RapidShade: Event updated:', recordId, updates);
     } else {
       // Create new record
       const newRecordIds = await grist.addRecords({ fields: updates });
-      console.log('Event added, new ID:', newRecordIds[0]);
+      console.log('RapidShade: Event added, new ID:', newRecordIds[0]);
     }
   } catch (error) {
-    console.error('Failed to upsert event:', error);
+    console.error('RapidShade: Failed to upsert event:', error);
     alert('Failed to save event. Check your mappings and permissions.');
   }
 }
@@ -907,69 +964,9 @@ async function upsertEvent(eventInfo) {
 async function deleteEvent(eventInfo) {
   try {
     await grist.deleteRecords([eventInfo.id]);
-    console.log('Event deleted:', eventInfo.id);
+    console.log('RapidShade: Event deleted:', eventInfo.id);
   } catch (error) {
-    console.error('Failed to delete event:', error);
+    console.error('RapidShade: Failed to delete event:', error);
     alert('Failed to delete event. Check your permissions.');
   }
 }
-
-// ** Additional minor corrections to Grist API calls **
-// Found a few other instances of `grist.get==='grist-plugin-api'().get.lookup` etc.
-// These are not syntax errors but runtime access errors for grist.
-
-// Inside updateCalendar, line ~470
-const mappings = grist.getMappings(); // Get current mappings once
-// ...
-// Change: backgroundColor: record.type && grist.get==='grist-plugin-api'().get.lookup('type', record.type).color,
-// To:
-// backgroundColor: record.type && mappings.type && grist.columnTypes.get(mappings.type).type === 'Choice' && grist.columnTypes.get(mappings.type).choices.find(c => c.value === record.type)?.color,
-
-// Inside updateCalendar, line ~498
-// Change: gristSelectedRecordChanged(grist.get==='grist-plugin-api'().getCursorPos().rowId);
-// To:
-// gristSelectedRecordChanged(grist.getCursorPos().rowId);
-
-// Inside gristSelectedRecordChanged, line ~513
-// Change: const record = grist.get==='grist-plugin-api'().get.records.get(rowId);
-// To:
-// const record = grist.getRecords().get(rowId);
-
-// The above corrections are integrated into the full code provided.
-
-// ColTypesFetcher - this object was mentioned but not defined. Assuming it was intended to be global.
-const colTypesFetcher = {
-  _colTypes: ['Date', 'Date'], // Default values for startDate, endDate.
-  _tableId: null,
-  async gotNewMappings(tableId) {
-    this._tableId = tableId;
-    await this.fetch();
-  },
-  async fetch() {
-    if (!this._tableId) { return; }
-    const gristDoc = new grist.DocAPI(this._tableId);
-    const colTypes = await gristDoc.fetchTable('GristMetadata').then(meta => {
-      const col = meta.columns.find(c => c.id === '_grist_Datetime');
-      // For older Grist versions, there's no _grist_Datetime table, so treat all as Date.
-      if (!col) { return ['Date', 'Date']; }
-      const dateTimeCols = new Set(col.colIds);
-      // Determine colType for the two relevant columns.
-      const mappings = grist.getMappings(); // THIS IS HOW IT SHOULD BE CALLED
-      return [
-        dateTimeCols.has(mappings.startDate) ? 'DateTime' : 'Date',
-        dateTimeCols.has(mappings.endDate) ? 'DateTime' : 'Date',
-      ];
-    }).catch(e => {
-      console.log("Failed to fetch column types", e);
-      return ['Date', 'Date'];
-    });
-    this._colTypes = colTypes;
-  },
-  getColTypes() { return this._colTypes; },
-  setAccessLevel(level) {
-    // If the access level doesn't support fetching metadata, then we don't try to fetch it.
-    if (level === 'none' || level === 'read') {
-      this._tableId = null;
-    }
-  }
-};
