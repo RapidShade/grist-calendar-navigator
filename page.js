@@ -1,4 +1,6 @@
 // to keep all calendar related logic;
+console.log("RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+
 let calendarHandler;
 
 const CALENDAR_NAME = 'standardCalendar';
