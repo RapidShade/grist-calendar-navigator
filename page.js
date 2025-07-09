@@ -681,18 +681,43 @@ async function configureGristSettings() {
 // RapidShade GEN - NEW  customUserAttributes definition
 const customUserAttributes = {
   doubleClickActions: {
-    label: t('doubleClickActions'), // Removed 'menus.'
-    type: 'group',
+    label: "Double-Click Actions", // Hardcoded
+    type: "group",
     children: {
-      targetPage1: { type: 'text', label: t('targetPage1'), description: t('targetPage1Description') }, // Removed 'menus.'
-      targetIdField1: { type: 'text', label: t('targetIdField1'), description: t('targetIdField1Description') }, // Removed 'menus.'
-      targetPage2: { type: 'text', label: t('targetPage2'), description: t('targetPage2Description') }, // Removed 'menus.'
-      targetIdField2: { type: 'text', label: t('targetIdField2'), description: t('targetIdField2Description') }, // Removed 'menus.'
-      targetPage3: { type: 'text', label: t('targetPage3'), description: t('targetPage3Description') }, // Removed 'menus.'
-      targetIdField3: { type: 'text', label: t('targetIdField3'), description: t('targetIdField3Description') }, // Removed 'menus.'
+      targetPage1: {
+        type: "text",
+        label: "Target Page 1", // Hardcoded
+        description: "Name of the first page to navigate to on double-click." // Hardcoded
+      },
+      targetIdField1: {
+        type: "text",
+        label: "Target ID Field 1", // Hardcoded
+        description: "Name of the ID column on Target Page 1 for record lookup." // Hardcoded
+      },
+      targetPage2: {
+        type: "text",
+        label: "Target Page 2", // Hardcoded
+        description: "Name of the second page to navigate to on double-click." // Hardcoded
+      },
+      targetIdField2: {
+        type: "text",
+        label: "Target ID Field 2", // Hardcoded
+        description: "Name of the ID column on Target Page 2 for record lookup." // Hardcoded
+      },
+      targetPage3: {
+        type: "text",
+        label: "Target Page 3", // Hardcoded
+        description: "Name of the third page to navigate to on double-click." // Hardcoded
+      },
+      targetIdField3: {
+        type: "text",
+        label: "Target ID Field 3", // Hardcoded
+        description: "Name of the ID column on Target Page 3 for record lookup." // Hardcoded
+      }
     }
   }
 };
+  
   grist.ready({
     requiredAccess: 'full',
     columns: columnsMappingOptions, // This defines the column mapping dropdowns
