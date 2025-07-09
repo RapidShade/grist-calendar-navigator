@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+console.log("RAPID1198_1202_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
 
 let calendarHandler;
 
@@ -309,6 +309,8 @@ class CalendarHandler {
 
         // Only scroll into view if the event is not fully on-screen.
         const container = event.closest('.toastui-calendar-time');
+        // ADD THIS CHECK FOR CONTAINER:
+        if (!container) { return; }
         const containerTop = container.scrollTop;
         const containerBottom = containerTop + container.clientHeight;
         const eventTop = event.offsetTop;
@@ -522,7 +524,8 @@ class CalendarHandler {
 
   setDoubleClickTargets(targets) {
     this._doubleClickTargets = targets;
-    console.log("Double-click targets updated:", this._doubleClickTargets);
+    console.log("RapidShade: Double-click targets updated (filtered):", this._doubleClickTargets); // MODIFIED LOG
+    console.log("RapidShade: Double-click targets received before filter:", targets); // ADDED LOG
   }
 
   /**
@@ -700,6 +703,7 @@ async function configureGristSettings() {
   grist.on("userAttributes", function(userAttrs) {
     console.log("RapidShade: Received user attributes:", userAttrs); // KEEP THIS LOG
     const options = userAttrs.doubleClickActions || {};
+    console.log("RapidShade: Double-click options from userAttrs:", options); // ADDED LOG
     window.gristCalendar.doubleClickActionTargetPage1 = options.targetPage1;
     window.gristCalendar.doubleClickActionTargetIdField1 = options.targetIdField1;
     window.gristCalendar.doubleClickActionTargetPage2 = options.targetPage2;
