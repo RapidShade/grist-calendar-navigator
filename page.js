@@ -701,7 +701,7 @@ const customUserAttributes = {
   // they would go here, outside the 'doubleClickActions' object.
 };
 console.log('<<<___RAPIDSHADE___>>>');
-console.log(customUserAttributes);
+console.log("Full customUserAttributes object:", JSON.stringify(customUserAttributes, null, 2));
 console.log('***___RAPIDSHADE___***');
   grist.ready({
     requiredAccess: 'full',
