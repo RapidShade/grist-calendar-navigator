@@ -696,6 +696,17 @@ async function configureGristSettings() {
     if (e.tableId && e.mappingsChange) { colTypesFetcher.gotNewMappings(e.tableId); }
   });
 
+  grist.on("userAttributes", function(userAttrs) {
+    console.log("RapidShade: Received user attributes:", userAttrs); // ADD THIS LINE
+    const options = userAttrs.doubleClickActions || {};
+    window.gristCalendar.doubleClickActionTargetPage1 = options.targetPage1;
+    window.gristCalendar.doubleClickActionTargetIdField1 = options.targetIdField1;
+    window.gristCalendar.doubleClickActionTargetPage2 = options.targetPage2;
+    window.gristCalendar.doubleClickActionTargetIdField2 = options.targetIdField2;
+    window.gristCalendar.doubleClickActionTargetPage3 = options.targetPage3;
+    window.gristCalendar.doubleClickActionTargetIdField3 = options.targetIdField3;
+  });
+  
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
   grist.enableKeyboardShortcuts?.();
 
