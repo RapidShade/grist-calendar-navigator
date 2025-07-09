@@ -621,15 +621,57 @@ function getGristOptions() {
       allowMultiple: false
     },
 // RapidShade GEM page.js (around line 328, after the 'type' object)
+    // New properties for Double-Click Target 1
     {
-      name: "doubleClickTargets",
-      title: t("Double-Click Targets"),
+      name: "targetPage1",
+      title: t("Target Page 1"),
       optional: true,
-      type: "Text", // Using 'Text' type for simplicity to allow JSON string input
-      description: t("JSON array of {'page': 'PageName', 'idField': 'RecordID'} objects. E.g., [{'page': 'DetailPage', 'idField': 'id'}]"),
-      // We'll parse this as JSON in our logic.
+      type: "Text",
+      description: t("Name of the first page to navigate to on double-click."),
       allowMultiple: false
-    }	
+    },
+    {
+      name: "targetIdField1",
+      title: t("ID Field 1"),
+      optional: true,
+      type: "Text",
+      description: t("Name of the ID column on Target Page 1 for record lookup."),
+      allowMultiple: false
+    },
+    // New properties for Double-Click Target 2
+    {
+      name: "targetPage2",
+      title: t("Target Page 2"),
+      optional: true,
+      type: "Text",
+      description: t("Name of the second page to navigate to on double-click."),
+      allowMultiple: false
+    },
+    {
+      name: "targetIdField2",
+      title: t("ID Field 2"),
+      optional: true,
+      type: "Text",
+      description: t("Name of the ID column on Target Page 2 for record lookup."),
+      allowMultiple: false
+    },
+    // New properties for Double-Click Target 3
+    {
+      name: "targetPage3",
+      title: t("Target Page 3"),
+      optional: true,
+      type: "Text",
+      description: t("Name of the third page to navigate to on double-click."),
+      allowMultiple: false
+    },
+    {
+      name: "targetIdField3",
+      title: t("ID Field 3"),
+      optional: true,
+      type: "Text",
+      description: t("Name of the ID column on Target Page 3 for record lookup."),
+      allowMultiple: false
+    }
   ];
 }
 
@@ -655,19 +697,20 @@ async function configureGristSettings() {
 
   // When user attributes (widget properties) are changed in the right pane
   grist.on("userAttributes", function(userAttrs) {
-    try {
-      // Parse the JSON string from the user attribute
-      const targets = userAttrs.doubleClickTargets ? JSON.parse(userAttrs.doubleClickTargets) : [];
-      // Validate the structure: ensure it's an array of objects with 'page' and 'idField'
-      calendarHandler.setDoubleClickTargets(
-        targets.filter(t => typeof t === 'object' && t !== null && typeof t.page === 'string' && typeof t.idField === 'string')
-      );
-    } catch (e) {
-      console.error("Error parsing doubleClickTargets user attribute:", e);
-      // Optionally, alert the user about invalid JSON input
-      // grist.showMessage("Error: Invalid JSON format for Double-Click Targets. Please check your input.", { level: 'error' });
-      calendarHandler.setDoubleClickTargets([]); // Clear invalid targets
+    const targets = [];
+
+    // Collect targets from userAttrs for up to 3 pages
+    for (let i = 1; i <= 3; i++) {
+      const pageName = userAttrs[`targetPage${i}`];
+      const idFieldName = userAttrs[`targetIdField${i}`];
+
+      // Only add a target if both page name and ID field are provided and are strings
+      if (typeof pageName === 'string' && pageName.trim() !== '' &&
+          typeof idFieldName === 'string' && idFieldName.trim() !== '') {
+        targets.push({ page: pageName.trim(), idField: idFieldName.trim() });
+      }
     }
+    calendarHandler.setDoubleClickTargets(targets);
   });
 
   // To get types, we need to know the tableId. This is a way to get it.
