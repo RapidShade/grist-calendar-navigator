@@ -2,6 +2,7 @@
 console.log("RapidShade: page.js version - " + new Date().toLocaleTimeString()); // KEEP THIS LINE AT THE VERY TOP
 
 let calendarHandler;
+let gristApiInitialized = false; // Flag to track Grist API readiness
 
 const CALENDAR_NAME = 'standardCalendar';
 
@@ -59,6 +60,9 @@ function isRecordValid(record) {
 }
 
 function getMonthName() {
+  if (!calendarHandler || !calendarHandler.calendar) {
+    return ''; // Return empty if calendar isn't ready
+  }
   return calendarHandler.calendar.getDate().toDate().toLocaleString(getLanguage(), {month: 'long', year: 'numeric'})
 }
 
@@ -228,8 +232,11 @@ class CalendarHandler {
     TZDate = this.calendar.getDate().constructor;
 
     this.calendar.on('clickEvent', async (info) => {
-      focusWidget();
-      await grist.setCursorPos({rowId: info.event.id});
+      // Ensure gristApiInitialized and record ID exists before calling setCursorPos
+      if (gristApiInitialized && info.event.id) {
+        focusWidget();
+        await grist.setCursorPos({rowId: info.event.id});
+      }
     });
 
     this.calendar.on('selectDateTime', async (info) => {
@@ -357,6 +364,7 @@ class CalendarHandler {
 
   // change calendar perspective between week, month and day.
   changeView(calendarViewPerspective) {
+    if (!calendarViewPerspective) return; // Defensive check
     this.calendar.changeView(calendarViewPerspective);
     updateUIAfterNavigation();
   }
@@ -390,11 +398,13 @@ class CalendarHandler {
 
     if (!targets || targets.length === 0) {
       // No custom targets configured, fall back to default Grist behavior
-      // (select row in source table and potentially show Record Card if Grist does that by default)
       console.log("RapidShade: No custom double-click targets configured. Falling back to default behavior.");
-      await grist.setCursorPos({rowId: recordId});
-      // Explicitly call viewAsCard here only if no custom targets
-      await grist.commandApi.run('viewAsCard');
+      if (gristApiInitialized) {
+        await grist.setCursorPos({rowId: recordId});
+        await grist.commandApi.run('viewAsCard');
+      } else {
+        console.warn("RapidShade: Grist API not initialized for double-click fallback.");
+      }
       return;
     }
 
@@ -409,22 +419,12 @@ class CalendarHandler {
   }
 
   async _navigateToPageAndRecord(pageName, idFieldName, recordId) {
+    if (!gristApiInitialized) {
+      console.warn("RapidShade: Grist API not initialized for navigation.");
+      alert(`Grist API not ready. Could not navigate to "${pageName}".`);
+      return;
+    }
     try {
-      // The grist.navigate API can take 'row' for rowId, but not directly a lookup for another field.
-      // So we navigate to the page and then use setSelectedRows.
-      // NOTE: This assumes the target page displays a table that contains the `idFieldName`
-      // and that the `recordId` from the calendar *is* a value in that `idFieldName` column.
-      // If your target table uses a *different* ID for the same logical record,
-      // you would need more advanced logic involving fetching the target table and performing a lookup.
-      // For now, `grist.setSelectedRows` works best when the `recordId` from the calendar *is* the
-      // actual rowId in the target table or a primary key directly matched by Grist.
-      // If `idFieldName` is the primary key column (or a unique value column),
-      // `grist.setSelectedRows` can be used to select a row based on a value in that column.
-      // However, grist.setSelectedRows directly uses Grist's internal row IDs for the current table.
-      // To select by a different field's value, we'd need to fetch data on the target page.
-      // For now, assuming `recordId` (from the event) is the grist row ID or a unique ID that
-      // can be used by grist.setSelectedRows after navigation.
-
       // First navigate to the page
       await grist.navigate({ page: pageName });
 
@@ -588,6 +588,9 @@ function getGristOptions() {
 }
 
 function updateUIAfterNavigation() {
+  if (!calendarHandler || !calendarHandler.calendar) {
+    return; // Don't proceed if calendar isn't ready
+  }
   calendarHandler.renderVisibleEvents();
   // update name of the month and year displayed on the top of the widget
   document.getElementById('calendar-title').innerText = getMonthName();
@@ -603,7 +606,7 @@ async function configureGristSettings() {
   // CRUD operations on records in table
   grist.onRecords(updateCalendar);
   // When cursor (selected record) change in the table
-  grist.onRecord(gristSelectedRecordChanged);
+  grist.onRecord(gristSelectedRecordChanged); // This now passes record, not just rowId
   // When options changed in the widget configuration (reaction to perspective change)
   grist.onOptions(onGristSettingsChanged);
   // To get types, we need to know the tableId. This is a way to get it.
@@ -664,7 +667,9 @@ async function configureGristSettings() {
 
 // Function to put focus on the widget whenever clicked or a row is selected programmatically.
 function focusWidget() {
-  grist.setAccessLevel('full');
+  if (gristApiInitialized) {
+    grist.setAccessLevel('full');
+  }
 }
 
 // Fetches all records from the mapped table and updates the calendar.
@@ -694,29 +699,44 @@ async function updateCalendar(records, mappings) {
         });
       }
     }
-    calendarHandler.setEvents(events);
-    calendarHandler.renderVisibleEvents();
+    if (calendarHandler) { // Ensure calendarHandler is initialized before using
+      calendarHandler.setEvents(events);
+      calendarHandler.renderVisibleEvents();
+    }
 
     if (currentMappings.startDate && currentMappings.title && currentMappings.id) {
-      await grist.ready({
-        required: [currentMappings.startDate, currentMappings.title, currentMappings.id],
-        optional: [currentMappings.endDate, currentMappings.isAllDay, currentMappings.type],
-      });
+      if (!gristApiInitialized) { // Only call grist.ready once
+        await grist.ready({
+          required: [currentMappings.startDate, currentMappings.title, currentMappings.id],
+          optional: [currentMappings.endDate, currentMappings.isAllDay, currentMappings.type, "targetPage1", "targetIdField1", "targetPage2", "targetIdField2", "targetPage3", "targetIdField3"],
+          widgetOptions: getGristWidgetOptions()
+        });
+        gristApiInitialized = true;
+        // After grist.ready is truly done, then configure the rest.
+        configureGristSettings();
+        // Initial update of UI after the calendar and Grist API are ready
+        updateUIAfterNavigation();
+      }
     }
   } else {
     // If no records, clear events and ensure required mappings are still set for grist.ready
-    calendarHandler.setEvents(new Map());
-    calendarHandler.renderVisibleEvents(); // Clear displayed events
+    if (calendarHandler) { // Ensure calendarHandler is initialized before using
+      calendarHandler.setEvents(new Map());
+      calendarHandler.renderVisibleEvents(); // Clear displayed events
+    }
     if (mappings.startDate && mappings.title && mappings.id) {
-      await grist.ready({
-        required: [mappings.startDate, mappings.title, mappings.id],
-        optional: [mappings.endDate, mappings.isAllDay, mappings.type],
-      });
+      if (!gristApiInitialized) { // Only call grist.ready once
+        await grist.ready({
+          required: [mappings.startDate, mappings.title, mappings.id],
+          optional: [mappings.endDate, mappings.isAllDay, mappings.type, "targetPage1", "targetIdField1", "targetPage2", "targetIdField2", "targetPage3", "targetIdField3"],
+          widgetOptions: getGristWidgetOptions()
+        });
+        gristApiInitialized = true;
+        configureGristSettings();
+        updateUIAfterNavigation();
+      }
     }
   }
-  // The first time that updateCalendar is called, it happens before onRecord, so we need to select the record
-  // explicitly in case we need to select something.
-  gristSelectedRecordChanged(grist.getCursorPos().rowId);
 }
 
 // Adjusts date depending on column type (Date vs DateTime).
@@ -726,9 +746,10 @@ function getAdjustedDate(date, colType) {
 }
 
 // When selected record changes in the Grist table.
-async function gristSelectedRecordChanged(rowId) {
-  const record = grist.getRecords().get(rowId);
-  if (record) {
+// Corrected signature: grist.onRecord now passes the record object
+async function gristSelectedRecordChanged(record, mappings) {
+  if (record && calendarHandler && calendarHandler.calendar) { // Ensure record and calendar are ready
+    colTypesFetcher.setMappings(mappings); // Update mappings for colTypesFetcher
     await calendarHandler.selectRecord(record);
     calendarHandler.refreshSelectedRecord();
   }
@@ -736,7 +757,13 @@ async function gristSelectedRecordChanged(rowId) {
 
 // Updates the calendar view when the widget settings (options) change.
 async function onGristSettingsChanged(options, mappings) {
-  // Pass mappings to colTypesFetcher (CRUCIAL FIX)
+  // Defensive check: ensure calendarHandler and its calendar instance are ready
+  if (!calendarHandler || !calendarHandler.calendar) {
+    console.warn("RapidShade: calendarHandler or its calendar instance not ready for onGristSettingsChanged.");
+    return;
+  }
+
+  // Pass mappings to colTypesFetcher
   colTypesFetcher.setMappings(mappings);
 
   if (options.defaultView && calendarHandler.calendar.getViewName() !== options.defaultView) {
@@ -786,6 +813,65 @@ async function onGristSettingsChanged(options, mappings) {
   }
 }
 
+// Widget options for the right-hand panel
+function getGristWidgetOptions() {
+  return {
+    defaultView: {
+      title: t("Default View"),
+      type: "Choice",
+      choices: [
+        { value: "day", label: t("Day") },
+        { value: "week", label: t("Week") },
+        { value: "month", label: t("Month") },
+      ],
+      description: t("Default calendar view"),
+      defaultValue: "week",
+    },
+    mainColor: {
+      title: t("Main Color"),
+      type: "Text",
+      description: t("Main color for events and calendar elements (CSS variable or hex)"),
+      defaultValue: 'var(--grist-theme-input-readonly-border)'
+    },
+    calendarBackgroundColor: {
+      title: t("Calendar Background Color"),
+      type: "Text",
+      description: t("Background color of the calendar area (CSS variable or hex)"),
+      defaultValue: 'var(--grist-theme-page-panels-main-panel-bg)'
+    },
+    selectedColor: {
+      title: t("Selected Event Color"),
+      type: "Text",
+      description: t("Color to highlight the selected event (CSS variable or hex)"),
+      defaultValue: 'var(--grist-theme-top-bar-button-primary-fg)'
+    },
+    borderStyle: {
+      title: t("Border Style"),
+      type: "Text",
+      description: t("CSS border style for calendar grids"),
+      defaultValue: '1px solid var(--grist-theme-table-body-border)'
+    },
+    accentColor: {
+      title: t("Accent Color"),
+      type: "Text",
+      description: t("Accent color for indicators (CSS variable or hex)"),
+      defaultValue: 'var(--grist-theme-accent-text)'
+    },
+    textColor: {
+      title: t("Text Color"),
+      type: "Text",
+      description: t("General text color for calendar elements (CSS variable or hex)"),
+      defaultValue: 'var(--grist-theme-text)'
+    },
+    selectionColor: {
+      title: t("Selection Color"),
+      type: "Text",
+      description: t("Color for grid selections (CSS variable or hex)"),
+      defaultValue: 'var(--grist-theme-selection)'
+    }
+  };
+}
+
 
 // ColTypesFetcher object to determine if date columns are Date or DateTime
 const colTypesFetcher = {
@@ -803,8 +889,8 @@ const colTypesFetcher = {
   },
 
   async fetch() {
-    if (!this._tableId || !this._currentMappings) { // Ensure mappings are available before fetching
-      console.log("RapidShade: colTypesFetcher.fetch() - Missing tableId or mappings. Skipping metadata fetch.");
+    if (!this._tableId || !this._currentMappings || !gristApiInitialized) { // Ensure mappings and API are available before fetching
+      console.log("RapidShade: colTypesFetcher.fetch() - Missing tableId, mappings, or Grist API not initialized. Skipping metadata fetch.");
       return;
     }
     const gristDoc = new grist.DocAPI(this._tableId);
@@ -838,81 +924,47 @@ const colTypesFetcher = {
 };
 
 
+// Function to handle calendar view changes from the UI buttons
+function changeCalendarView(viewName) {
+  if (calendarHandler) {
+    calendarHandler.changeView(viewName);
+  }
+}
+
 // --- Grist Widget Configuration (runs once when widget is loaded) ---
 ready(async function() {
   calendarHandler = new CalendarHandler(); // Initialize the CalendarHandler
+  // The first grist.ready call just gets the initial mappings.
+  // We explicitly set widgetOptions here as well, so the panel appears.
   await grist.ready({
     columns: columnsMappingOptions,
-    required: ["startDate", "title"], // Only these are strictly required initially for grist.ready
+    required: ["startDate", "title"],
     optional: ["endDate", "isAllDay", "type", "targetPage1", "targetIdField1", "targetPage2", "targetIdField2", "targetPage3", "targetIdField3"],
-    // Add custom options for the right-hand panel
-    widgetOptions: {
-      defaultView: {
-        title: t("Default View"),
-        type: "Choice",
-        choices: [
-          { value: "day", label: t("Day") },
-          { value: "week", label: t("Week") },
-          { value: "month", label: t("Month") },
-        ],
-        description: t("Default calendar view"),
-        defaultValue: "week",
-      },
-      mainColor: {
-        title: t("Main Color"),
-        type: "Text",
-        description: t("Main color for events and calendar elements (CSS variable or hex)"),
-        defaultValue: 'var(--grist-theme-input-readonly-border)'
-      },
-      calendarBackgroundColor: {
-        title: t("Calendar Background Color"),
-        type: "Text",
-        description: t("Background color of the calendar area (CSS variable or hex)"),
-        defaultValue: 'var(--grist-theme-page-panels-main-panel-bg)'
-      },
-      selectedColor: {
-        title: t("Selected Event Color"),
-        type: "Text",
-        description: t("Color to highlight the selected event (CSS variable or hex)"),
-        defaultValue: 'var(--grist-theme-top-bar-button-primary-fg)'
-      },
-      borderStyle: {
-        title: t("Border Style"),
-        type: "Text",
-        description: t("CSS border style for calendar grids"),
-        defaultValue: '1px solid var(--grist-theme-table-body-border)'
-      },
-      accentColor: {
-        title: t("Accent Color"),
-        type: "Text",
-        description: t("Accent color for indicators (CSS variable or hex)"),
-        defaultValue: 'var(--grist-theme-accent-text)'
-      },
-      textColor: {
-        title: t("Text Color"),
-        type: "Text",
-        description: t("General text color for calendar elements (CSS variable or hex)"),
-        defaultValue: 'var(--grist-theme-text)'
-      },
-      selectionColor: {
-        title: t("Selection Color"),
-        type: "Text",
-        description: t("Color for grid selections (CSS variable or hex)"),
-        defaultValue: 'var(--grist-theme-selection)'
-      }
-    }
+    widgetOptions: getGristWidgetOptions() // Pass widget options here
   });
+  gristApiInitialized = true;
 
-  // Now configure Grist settings and listeners
+  // Now that Grist API is ready and calendarHandler is initialized,
+  // set up the main listeners.
   configureGristSettings();
 
-  // Initial update of UI after the calendar is ready
+  // Add event listeners for view control buttons (IDs will be added in index.html)
+  document.getElementById('dayView')?.addEventListener('change', () => changeCalendarView('day'));
+  document.getElementById('weekView')?.addEventListener('change', () => changeCalendarView('week'));
+  document.getElementById('monthView')?.addEventListener('change', () => changeCalendarView('month'));
+
+  // Add event listeners for navigation buttons (using class names as they are common)
+  document.getElementById('calendarPrev')?.addEventListener('click', () => calendarHandler.calendarPrevious());
+  document.getElementById('calendarNext')?.addEventListener('click', () => calendarHandler.calendarNext());
+  document.getElementById('calendarToday')?.addEventListener('click', () => calendarHandler.calendarToday());
+
+  // Initial update of UI after the calendar and Grist API are ready
   updateUIAfterNavigation();
 });
 
 
 document.addEventListener('dblclick', async (ev) => {
-  if (!ev.target || !calendarHandler || !calendarHandler.calendar) { return; }
+  if (!ev.target || !calendarHandler || !calendarHandler.calendar || !gristApiInitialized) { return; }
 
   const eventDom = ev.target.closest("[data-event-id]");
   if (!eventDom) {
@@ -934,6 +986,11 @@ document.addEventListener('dblclick', async (ev) => {
 
 // Helper for upserting events; either creates a new event, or updates an existing one.
 async function upsertEvent(eventInfo) {
+  if (!gristApiInitialized) {
+    console.warn("RapidShade: Grist API not initialized for upsertEvent.");
+    alert('Grist API not ready. Failed to save event.');
+    return;
+  }
   const recordId = eventInfo.id;
   // raw contains current values, including unmapped ones. Not directly used for updates.
 
@@ -962,6 +1019,11 @@ async function upsertEvent(eventInfo) {
 
 // Helper for deleting events.
 async function deleteEvent(eventInfo) {
+  if (!gristApiInitialized) {
+    console.warn("RapidShade: Grist API not initialized for deleteEvent.");
+    alert('Grist API not ready. Failed to delete event.');
+    return;
+  }
   try {
     await grist.deleteRecords([eventInfo.id]);
     console.log('RapidShade: Event deleted:', eventInfo.id);
