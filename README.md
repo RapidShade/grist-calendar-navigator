@@ -4,10 +4,7 @@ A custom Grist widget that displays events in a calendar and allows navigation t
 
 ## How to Use
 
-1. Upload `index.html` to a GitHub repository (e.g. `grist-calendar-navigator`).
-2. Enable GitHub Pages: go to Repo → Settings → Pages → set Source to `main`, root.
-3. Copy the public URL (e.g. `https://yourusername.github.io/grist-calendar-navigator/`).
-4. In Grist, add a **Custom Widget**, and paste the URL.
+In Grist, add a **Custom Widget**, and paste the URL: https://rapidshade.github.io/grist-calendar-navigator/
 
 ## Widget Options
 
