@@ -722,6 +722,8 @@ async function configureGristSettings() {
     testAttribute: { label: "Test Parameter", type: "text" } 
   };
 
+  console.log(customUserAttributes);
+  
   grist.ready({
     requiredAccess: 'full',
     columns: columnsMappingOptions, // This defines the column mapping dropdowns
