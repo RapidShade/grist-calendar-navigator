@@ -1,160 +1,17 @@
 {
-  "name": "Enhanced Calendar Navigator",
-  "description": "Calendar widget with page navigation functionality",
-  "version": "1.0.0",
-  "url": "index.html",
-  "published": true,
-  "widgetId": "enhanced-calendar-navigator",
-  "options": {
-    "Title": {
-      "type": "column",
-      "label": "Title",
-      "optional": true,
-      "description": "Column containing event titles"
-    },
-    "Start": {
-      "type": "column", 
-      "label": "Start Date",
-      "optional": false,
-      "description": "Column containing event start dates"
-    },
-    "End": {
-      "type": "column",
-      "label": "End Date", 
-      "optional": true,
-      "description": "Column containing event end dates"
-    },
-    "Description": {
-      "type": "column",
-      "label": "Description",
-      "optional": true,
-      "description": "Column containing event descriptions"
-    },
-    "AllDay": {
-      "type": "column",
-      "label": "All Day",
-      "optional": true,
-      "description": "Column indicating if event is all day"
-    },
-    "page1_title": {
-      "type": "text",
-      "label": "Page 1 Title",
-      "optional": true,
-      "description": "Display name for first page option"
-    },
-    "page1_id": {
-      "type": "text",
-      "label": "Page 1 ID",
-      "optional": true,
-      "description": "Page ID (e.g., 'p4' from /p/4)"
-    },
-    "page1_table": {
-      "type": "text",
-      "label": "Page 1 Table ID",
-      "optional": true,
-      "description": "Table ID that contains the records"
-    },
-    "page1_id_field": {
-      "type": "text",
-      "label": "Page 1 ID Field",
-      "optional": true,
-      "description": "Field name containing record IDs"
-    },
-    "page2_title": {
-      "type": "text",
-      "label": "Page 2 Title",
-      "optional": true,
-      "description": "Display name for second page option"
-    },
-    "page2_id": {
-      "type": "text",
-      "label": "Page 2 ID", 
-      "optional": true,
-      "description": "Page ID (e.g., 'p5' from /p/5)"
-    },
-    "page2_table": {
-      "type": "text",
-      "label": "Page 2 Table ID",
-      "optional": true,
-      "description": "Table ID that contains the records"
-    },
-    "page2_id_field": {
-      "type": "text",
-      "label": "Page 2 ID Field",
-      "optional": true,
-      "description": "Field name containing record IDs"
-    },
-    "page3_title": {
-      "type": "text",
-      "label": "Page 3 Title",
-      "optional": true,
-      "description": "Display name for third page option"
-    },
-    "page3_id": {
-      "type": "text",
-      "label": "Page 3 ID",
-      "optional": true,
-      "description": "Page ID (e.g., 'p6' from /p/6)"
-    },
-    "page3_table": {
-      "type": "text",
-      "label": "Page 3 Table ID",
-      "optional": true,
-      "description": "Table ID that contains the records"
-    },
-    "page3_id_field": {
-      "type": "text",
-      "label": "Page 3 ID Field",
-      "optional": true,
-      "description": "Field name containing record IDs"
-    },
-    "page4_title": {
-      "type": "text",
-      "label": "Page 4 Title",
-      "optional": true,
-      "description": "Display name for fourth page option"
-    },
-    "page4_id": {
-      "type": "text",
-      "label": "Page 4 ID",
-      "optional": true,
-      "description": "Page ID (e.g., 'p7' from /p/7)"
-    },
-    "page4_table": {
-      "type": "text",
-      "label": "Page 4 Table ID",
-      "optional": true,
-      "description": "Table ID that contains the records"
-    },
-    "page4_id_field": {
-      "type": "text",
-      "label": "Page 4 ID Field",
-      "optional": true,
-      "description": "Field name containing record IDs"
-    },
-    "page5_title": {
-      "type": "text",
-      "label": "Page 5 Title",
-      "optional": true,
-      "description": "Display name for fifth page option"
-    },
-    "page5_id": {
-      "type": "text",
-      "label": "Page 5 ID",
-      "optional": true,
-      "description": "Page ID (e.g., 'p8' from /p/8)"
-    },
-    "page5_table": {
-      "type": "text",
-      "label": "Page 5 Table ID",
-      "optional": true,
-      "description": "Table ID that contains the records"
-    },
-    "page5_id_field": {
-      "type": "text",
-      "label": "Page 5 ID Field",
-      "optional": true,
-      "description": "Field name containing record IDs"
+  "id": "rapidshade-calendar-navigator",
+  "name": "RapidShade Calendar Navigator",
+  "description": "An enhanced calendar widget with customizable double-click actions to navigate Grist pages.",
+  "author": "RapidShade",
+  "homepage": "https://github.com/RapidShade/grist-calendar-navigator",
+  "icon": "https://www.gristlabs.com/img/logo.png",
+  "components": [
+    {
+      "url": "index.html",
+      "type": "data",
+      "gristVersion": "1.0.0",
+      "minAppVersion": "0.1.0"
     }
-  }
+  ],
+  "dataTables": ["table1"]
 }

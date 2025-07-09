@@ -1,369 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Calendar Widget</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/grist-plugin-api/1.0.0/plugin-api.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.0/main.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.0/main.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 10px;
-            background-color: #f5f5f5;
-        }
-        #calendar {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            height: calc(100vh - 20px);
-        }
-        
-        /* Page selection modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-        
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: none;
-            border-radius: 8px;
-            width: 400px;
-            max-width: 90%;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
-        
-        .modal-title {
-            margin: 0;
-            font-size: 18px;
-            color: #333;
-        }
-        
-        .close {
-            color: #aaa;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            line-height: 1;
-        }
-        
-        .close:hover {
-            color: #000;
-        }
-        
-        .page-option {
-            padding: 12px 16px;
-            margin: 8px 0;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background-color: #f9f9f9;
-        }
-        
-        .page-option:hover {
-            background-color: #e3f2fd;
-            border-color: #2196f3;
-        }
-        
-        .page-option-title {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 4px;
-        }
-        
-        .page-option-subtitle {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .fc-event {
-            cursor: pointer;
-        }
-        
-        .fc-event:hover {
-            opacity: 0.8;
-        }
-        
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 200px;
-            color: #666;
-        }
-    </style>
+    <link rel="stylesheet" href="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.css"/>
+    <link rel="stylesheet" href="https://uicdn.toast.com/tui.date-picker/latest/tui-date-picker.css" />
+    <link rel="stylesheet" href="https://uicdn.toast.com/tui.time-picker/latest/tui-time-picker.css">
+    <link rel="stylesheet" href="screen.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <meta charset="utf-8"/>
+    <meta
+            name="viewport"
+            content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <title>Calendar Widget</title>
 </head>
 <body>
-    <div id="loading" class="loading">Loading calendar...</div>
-    <div id="calendar" style="display: none;"></div>
-    
-    <!-- Page selection modal -->
-    <div id="pageModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Select Page to Open</h3>
-                <span class="close" onclick="closePageModal()">&times;</span>
-            </div>
-            <div id="pageOptions"></div>
+<div id="calendar-container">
+    <nav id="calendar-options">
+        <div id="calendar-navigation-buttons">
+            <button id="calendar-button-previous" class="btn btn-sm" onclick="calendarHandler.calendarPrevious()">
+                <div class="icon icon-arrow-left"></div>
+            </button>
+            <button id="calendar-button-next" class="btn btn-sm" onclick="calendarHandler.calendarNext()">
+                <div class="icon icon-arrow-right"></div>
+            </button>
+            <button id="calendar-button-today" class="btn btn-sm" data-i18n="today" onclick="calendarHandler.calendarToday()">Today
+            </button>
         </div>
+        <div id="calendar-perspective-buttons" class="btn-group btn-group-sm" data-toggle="buttons">
+            <label id="calendar-day-label" class="btn" for="calendar-day" >
+                <input type="radio" id="calendar-day" class="btn-check" name="calendar-options" value="day"
+                       onchange="calendarViewChanges(this)" >
+                <span data-i18n="day">Day</span>
+            </label>
+            <label id="calendar-week-label" class="btn" for="calendar-week" >
+                <input type="radio" id="calendar-week" class="btn-check" name="calendar-options" value="week"
+                       onchange="calendarViewChanges(this)">
+                <span data-i18n="week">Week</span>
+            </label>
+            <label id="calendar-month-label" class="btn" for="calendar-month" >
+                <input type="radio" id="calendar-month" class="btn-check" name="calendar-options" value="month"
+                       onchange="calendarViewChanges(this)" >
+                <span data-i18n="month">Month</span>
+            </label>
+        </div>
+        <time id="calendar-title"></time>
+    </nav>
+    <div id="calendar">
     </div>
+</div>
+</body>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<script src="https://uicdn.toast.com/tui.time-picker/latest/tui-time-picker.js"></script>
+<script>
+  // HACK: Override the default time picker format to be 24-hour. There is no other way to do this,
+  // calendar doesn't offer a way to pass this down to the time picker.
+  // This also can't be done in the page.js as the next script will grab the reference immediately.
+  (function() {
+    tui.TimePicker = class extends tui.TimePicker {
+      constructor(container, options) {
+        super(container, {
+          ...options,
+          format: 'HH:mm'
+        });
+      }
+    };
+  })();
+</script>
+<script src="https://uicdn.toast.com/tui.date-picker/latest/tui-date-picker.js"></script>
+<script src="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/i18next@23.5.1/i18next.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/i18next-http-backend@1.3.1/i18nextHttpBackend.min.js"></script>
 
-    <script>
-        let calendar;
-        let currentRecord = null;
-        let widgetOptions = {};
-        let pageConfigurations = [];
-        let tableData = [];
-        let columnMappings = {};
-        
-        // Initialize the widget
-        grist.ready({
-            requiredAccess: 'read table',
-            columns: ['Title', 'Start', 'End', 'Description', 'AllDay']
-        });
-        
-        // Handle table data updates
-        grist.onRecord(function(record) {
-            // Single record update - not used for calendar
-        });
-        
-        grist.onRecords(function(records) {
-            tableData = records;
-            updateCalendar();
-        });
-        
-        // Handle column mapping updates
-        grist.onOptions(function(options, interaction) {
-            widgetOptions = options || {};
-            
-            // Map standard calendar columns
-            columnMappings = {
-                title: options.Title || 'Title',
-                start: options.Start || 'Start', 
-                end: options.End || 'End',
-                description: options.Description || 'Description',
-                allDay: options.AllDay || 'AllDay'
-            };
-            
-            parsePageConfigurations();
-            updateCalendar();
-        });
-        
-        function parsePageConfigurations() {
-            pageConfigurations = [];
-            
-            // Parse page configurations from options
-            for (let i = 1; i <= 10; i++) {
-                const pageTitle = widgetOptions[`page${i}_title`];
-                const pageId = widgetOptions[`page${i}_id`];
-                const tableId = widgetOptions[`page${i}_table`];
-                const idField = widgetOptions[`page${i}_id_field`];
-                
-                if (pageTitle && pageId && tableId && idField) {
-                    pageConfigurations.push({
-                        title: pageTitle,
-                        pageId: pageId,
-                        tableId: tableId,
-                        idField: idField
-                    });
-                }
-            }
-        }
-        
-        function initializeCalendar() {
-            const calendarEl = document.getElementById('calendar');
-            calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                height: 'auto',
-                events: [],
-                eventClick: function(info) {
-                    info.jsEvent.preventDefault();
-                    handleEventDoubleClick(info.event);
-                },
-                eventDidMount: function(info) {
-                    // Add double-click handler
-                    info.el.addEventListener('dblclick', function() {
-                        handleEventDoubleClick(info.event);
-                    });
-                }
-            });
-            
-            calendar.render();
-            
-            // Hide loading and show calendar
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('calendar').style.display = 'block';
-        }
-        
-        function handleEventDoubleClick(event) {
-            currentRecord = event.extendedProps.record;
-            
-            if (pageConfigurations.length === 0) {
-                // Default behavior - show record detail
-                grist.docApi.openDocPage(currentRecord.id);
-                return;
-            }
-            
-            if (pageConfigurations.length === 1) {
-                // Single page configured - navigate directly
-                navigateToPage(pageConfigurations[0]);
-                return;
-            }
-            
-            // Multiple pages - show selection modal
-            showPageSelectionModal();
-        }
-        
-        function showPageSelectionModal() {
-            const modal = document.getElementById('pageModal');
-            const optionsContainer = document.getElementById('pageOptions');
-            
-            optionsContainer.innerHTML = '';
-            
-            pageConfigurations.forEach(pageConfig => {
-                const option = document.createElement('div');
-                option.className = 'page-option';
-                option.onclick = () => {
-                    navigateToPage(pageConfig);
-                    closePageModal();
-                };
-                
-                option.innerHTML = `
-                    <div class="page-option-title">${pageConfig.title}</div>
-                    <div class="page-option-subtitle">Table: ${pageConfig.tableId}</div>
-                `;
-                
-                optionsContainer.appendChild(option);
-            });
-            
-            modal.style.display = 'block';
-        }
-        
-        function closePageModal() {
-            document.getElementById('pageModal').style.display = 'none';
-        }
-        
-        function navigateToPage(pageConfig) {
-            if (!currentRecord) return;
-            
-            // Get the record ID from the specified field
-            const recordId = currentRecord[pageConfig.idField];
-            
-            if (recordId) {
-                // Navigate to the page with the specific record
-                const url = `${window.location.origin}/p/${pageConfig.pageId}?${pageConfig.tableId}=${recordId}`;
-                window.parent.location.href = url;
-            } else {
-                console.error(`Record ID not found in field: ${pageConfig.idField}`);
-                alert(`Could not find record ID in field: ${pageConfig.idField}`);
-            }
-        }
-        
-        function updateCalendar() {
-            if (!calendar || !tableData.length) return;
-            
-            const events = tableData.map(record => {
-                const title = record[columnMappings.title] || 'Untitled Event';
-                const start = record[columnMappings.start];
-                const end = record[columnMappings.end];
-                const description = record[columnMappings.description] || '';
-                const allDay = record[columnMappings.allDay] || false;
-                
-                if (!start) return null; // Skip events without start date
-                
-                return {
-                    id: record.id,
-                    title: title,
-                    start: start,
-                    end: end,
-                    description: description,
-                    allDay: allDay,
-                    extendedProps: {
-                        record: record
-                    }
-                };
-            }).filter(event => event !== null);
-            
-            calendar.removeAllEvents();
-            calendar.addEventSource(events);
-        }
-        
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('pageModal');
-            if (event.target === modal) {
-                closePageModal();
-            }
-        };
-        
-        // Initialize calendar when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeCalendar();
-        });
-        
-        // Custom widget configuration
-        grist.onOptions(function(options, interaction) {
-            if (interaction) {
-                // Add custom configuration fields for page navigation
-                const customFields = [];
-                
-                for (let i = 1; i <= 5; i++) {
-                    customFields.push({
-                        name: `page${i}_title`,
-                        label: `Page ${i} Title`,
-                        type: 'text',
-                        value: options[`page${i}_title`] || ''
-                    });
-                    customFields.push({
-                        name: `page${i}_id`, 
-                        label: `Page ${i} ID`,
-                        type: 'text',
-                        value: options[`page${i}_id`] || ''
-                    });
-                    customFields.push({
-                        name: `page${i}_table`,
-                        label: `Page ${i} Table ID`, 
-                        type: 'text',
-                        value: options[`page${i}_table`] || ''
-                    });
-                    customFields.push({
-                        name: `page${i}_id_field`,
-                        label: `Page ${i} ID Field`,
-                        type: 'text', 
-                        value: options[`page${i}_id_field`] || ''
-                    });
-                }
-                
-                // This would be handled by Grist's configuration system
-                // The actual implementation depends on Grist's widget options API
-            }
-        });
-    </script>
+<script src="page.js"></script>
 </body>
 </html>
