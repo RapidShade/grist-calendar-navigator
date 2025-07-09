@@ -1085,6 +1085,7 @@ function clean(obj) {
 }
 
 // RapidShade - GEM - DEBUG VERSION
+/*
 document.addEventListener('dblclick', async (ev) => {
   console.log("RapidShade: Double-click event triggered."); // ADD THIS
   if (!ev.target || !calendarHandler.calendar) {
@@ -1136,9 +1137,8 @@ document.addEventListener('dblclick', async (ev) => {
     console.log("RapidShade: Default Record Card action called."); // ADD THIS
   }
 });
-
+*/
 // RapidShade - GEM - page.js (around line 520, replace the existing dblclick listener content)
-/*
 document.addEventListener('dblclick', async (ev) => {
   if (!ev.target || !calendarHandler.calendar) { return; }
 
@@ -1151,13 +1151,13 @@ document.addEventListener('dblclick', async (ev) => {
   const eventId = Number(eventDom.dataset.eventId);
   if (!eventId || Number.isNaN(eventId)) { return; }
 
-  const event = calendarHandler.calendar.getEventModel(eventId, CALENDAR_NAME);
+  const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME); // Corrected: use getEvent not getEventModel
   if (!event) { return; }
 
   // Call our new custom handler
   await calendarHandler.handleDoubleClickAction(event.id);
 });
-*/
+
 // HACK: show Record Card popup on dblclick.
 //document.addEventListener('dblclick', async (ev) => {
 //  // tui calendar shows a popup on mouseup, and there is no way to customize it.
