@@ -678,54 +678,29 @@ async function configureGristSettings() {
   // bind columns mapping options to the GUI
   const columnsMappingOptions = getGristOptions();
 
-  // Define our custom user attributes for page/field selection
-  const customUserAttributes = {
-    // New properties for Double-Click Target 1
-    targetPage1: {
-      type: 'text', // <-- Use 'text' here for a plain text input box
-      title: t("Target Page 1"),
-      description: t("Name of the first page to navigate to on double-click."),
-      group: t("Double-Click Actions") // Optional: group these settings in the UI
-    },
-    targetIdField1: {
-      type: 'text', // <-- Use 'text' here for a plain text input box
-      title: t("ID Field 1"),
-      description: t("Name of the ID column on Target Page 1 for record lookup."),
-      group: t("Double-Click Actions")
-    },
-    // New properties for Double-Click Target 2
-    targetPage2: {
-      type: 'text',
-      title: t("Target Page 2"),
-      description: t("Name of the second page to navigate to on double-click."),
-      group: t("Double-Click Actions")
-    },
-    targetIdField2: {
-      type: 'text',
-      title: t("ID Field 2"),
-      description: t("Name of the ID column on Target Page 2 for record lookup."),
-      group: t("Double-Click Actions")
-    },
-    // New properties for Double-Click Target 3
-    targetPage3: {
-      type: 'text',
-      title: t("Target Page 3"),
-      description: t("Name of the third page to navigate to on double-click."),
-      group: t("Double-Click Actions")
-    },
-    targetIdField3: {
-      type: 'text',
-      title: t("ID Field 3"),
-      description: t("Name of the ID column on Target Page 3 for record lookup."),
-      group: t("Double-Click Actions")
-    },
-    testAttribute: { label: "Test Parameter", type: "text" } 
-  };
+// RapidShade GEN - NEW  customUserAttributes definition
+const customUserAttributes = {
+  // This is the new top-level group definition
+  doubleClickActions: {
+    label: t('menus.doubleClickActions'), // This uses your translation
+    type: 'group',
+    children: {
+      // All your existing double-click attributes go inside 'children'
+      targetPage1: { type: 'text', label: t('menus.targetPage1'), description: t('menus.targetPage1Description') },
+      targetIdField1: { type: 'text', label: t('menus.targetIdField1'), description: t('menus.targetIdField1Description') },
+      targetPage2: { type: 'text', label: t('menus.targetPage2'), description: t('menus.targetPage2Description') },
+      targetIdField2: { type: 'text', label: t('menus.targetIdField2'), description: t('menus.targetIdField2Description') },
+      targetPage3: { type: 'text', label: t('menus.targetPage3'), description: t('menus.targetPage3Description') },
+      targetIdField3: { type: 'text', label: t('menus.targetIdField3'), description: t('menus.targetIdField3Description') },
 
-  console.log('___RAPIDSHADE___');
-  console.log(customUserAttributes);
-  console.log('===RAPIDSHADE===');
-  
+      // If you added testAttribute for debugging and want to keep it in this group
+      // testAttribute: {label: 'Test Parameter', type: 'text'}
+    }
+  }
+  // If you had any other custom attributes that are NOT part of the doubleClickActions group,
+  // they would go here, outside the 'doubleClickActions' object.
+};
+
   grist.ready({
     requiredAccess: 'full',
     columns: columnsMappingOptions, // This defines the column mapping dropdowns
