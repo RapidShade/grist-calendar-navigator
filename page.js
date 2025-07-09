@@ -850,8 +850,8 @@ const colTypesFetcher = {
       if (!col) { return ['Date', 'Date']; }
       const dateTimeCols = new Set(col.colIds);
       // Determine colType for the two relevant columns.
-      const mappings = grist.get={'grist-plugin-api'}().get
-      grist.getMappings();
+      // THIS IS THE CORRECTED LINE:
+      const mappings = grist.getMappings();
       return [
         dateTimeCols.has(mappings.startDate) ? 'DateTime' : 'Date',
         dateTimeCols.has(mappings.endDate) ? 'DateTime' : 'Date',
