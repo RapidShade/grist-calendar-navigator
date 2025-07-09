@@ -394,9 +394,8 @@ class CalendarHandler {
       // (select row in source table and potentially show Record Card if Grist does that by default)
       console.log("RapidShade: No custom double-click targets configured. Falling back to default behavior.");
       await grist.setCursorPos({rowId: recordId});
-      // The original dblclick listener already calls grist.commandApi.run('viewAsCard'),
-      // so we just need to ensure the cursor is set.
-      await grist.commandApi.run('viewAsCard'); // Explicitly call viewAsCard here for clarity
+      // Explicitly call viewAsCard here only if no custom targets
+      await grist.commandApi.run('viewAsCard');
       return;
     }
 
@@ -514,20 +513,13 @@ class CalendarHandler {
       };
       modal.addEventListener('click', handleClick);
     });
-  }  
-
-  getEvents() {
-    return this._allEvents;
   }
 
-  setEvents(events) {
-    this._allEvents = events;
-  }
+  getEvents() { return this._allEvents; }
+  setEvents(events) { this._allEvents = events; }
 
-// RapidShade - GEM - page.js (inside CalendarHandler class, e.g., after setEvents, around line 273)
-
+  // RapidShade - GEM - page.js (inside CalendarHandler class, e.g., after setEvents, around line 273)
   _doubleClickTargets = []; // Initialize an internal property to store the targets
-
   setDoubleClickTargets(targets) {
     this._doubleClickTargets = targets;
     console.log("RapidShade: Double-click targets updated:", this._doubleClickTargets);
@@ -541,7 +533,6 @@ class CalendarHandler {
     const newVisibleEventIds = new Set();
     const dateRangeStart = this.calendar.getDateRangeStart();
     const dateRangeEnd = this.calendar.getDateRangeEnd().setHours(23, 99, 99, 999);
-
     // Add or update events that are now visible.
     for (const event of this._allEvents.values()) {
       const isEventInRange = (
@@ -549,8 +540,9 @@ class CalendarHandler {
         (event.end >= dateRangeStart && event.end <= dateRangeEnd) ||
         (event.start < dateRangeStart && event.end > dateRangeEnd)
       );
-      if (!isEventInRange) { continue; }
-  
+      if (!isEventInRange) {
+        continue;
+      }
       const calendarEvent = this.calendar.getEvent(event.id, CALENDAR_NAME);
       if (!calendarEvent) {
         this.calendar.createEvents([event]);
@@ -559,14 +551,12 @@ class CalendarHandler {
       }
       newVisibleEventIds.add(event.id);
     }
-
     // Remove events that are no longer visible.
     for (const eventId of this._visibleEventIds) {
       if (!newVisibleEventIds.has(eventId)) {
         this.calendar.deleteEvent(eventId, CALENDAR_NAME);
       }
     }
-
     this._visibleEventIds = newVisibleEventIds;
   }
 }
@@ -574,100 +564,21 @@ class CalendarHandler {
 // Data for column mapping fields in Widget GUI
 function getGristOptions() {
   return [
-    {
-      name: "startDate",
-      title: t("Start Date"),
-      optional: false,
-      type: "Date,DateTime",
-      description: t("starting point of event"),
-      allowMultiple: false,
-      strictType: true
-    },
-    {
-      name: "endDate",
-      title: t("End Date"),
-      optional: true,
-      type: "Date,DateTime",
-      description: t("ending point of event"),
-      allowMultiple: false,
-      strictType: true
-    },
-    {
-      name: "isAllDay",
-      title: t("Is All Day"),
-      optional: true,
-      type: "Bool",
-      description: t("is event all day long"),
-      strictType: true
-    },
-    {
-      name: "title",
-      title: t("Title"),
-      optional: false,
-      type: "Text",
-      description: t("title of event"),
-      allowMultiple: false
-    },
-    {
-      name: "type",
-      title: t("Type"),
-      optional: true,
-      type: "Choice,ChoiceList",
-      description: t("event category and style"),
-      allowMultiple: false
-    },
+    { name: "startDate", title: t("Start Date"), optional: false, type: "Date,DateTime", description: t("starting point of event"), allowMultiple: false, strictType: true },
+    { name: "endDate", title: t("End Date"), optional: true, type: "Date,DateTime", description: t("ending point of event"), allowMultiple: false, strictType: true },
+    { name: "isAllDay", title: t("Is All Day"), optional: true, type: "Bool", description: t("is event all day long"), strictType: true },
+    { name: "title", title: t("Title"), optional: false, type: "Text", description: t("title of event"), allowMultiple: false },
+    { name: "type", title: t("Type"), optional: true, type: "Choice,ChoiceList", description: t("event category and style"), allowMultiple: false },
     // RapidShade - GEM - page.js (around line 328, after the 'type' object)
     // New properties for Double-Click Target 1
-    {
-      name: "targetPage1",
-      title: t("Target Page 1"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the first page to navigate to on double-click."),
-      allowMultiple: false
-    },
-    {
-      name: "targetIdField1",
-      title: t("ID Field 1"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the ID column on Target Page 1 for record lookup."),
-      allowMultiple: false
-    },
+    { name: "targetPage1", title: t("Target Page 1"), optional: true, type: "Text", description: t("Name of the first page to navigate to on double-click."), allowMultiple: false },
+    { name: "targetIdField1", title: t("ID Field 1"), optional: true, type: "Text", description: t("Name of the ID column on Target Page 1 for record lookup."), allowMultiple: false },
     // New properties for Double-Click Target 2
-    {
-      name: "targetPage2",
-      title: t("Target Page 2"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the second page to navigate to on double-click."),
-      allowMultiple: false
-    },
-    {
-      name: "targetIdField2",
-      title: t("ID Field 2"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the ID column on Target Page 2 for record lookup."),
-      allowMultiple: false
-    },
+    { name: "targetPage2", title: t("Target Page 2"), optional: true, type: "Text", description: t("Name of the second page to navigate to on double-click."), allowMultiple: false },
+    { name: "targetIdField2", title: t("ID Field 2"), optional: true, type: "Text", description: t("Name of the ID column on Target Page 2 for record lookup."), allowMultiple: false },
     // New properties for Double-Click Target 3
-    {
-      name: "targetPage3",
-      title: t("Target Page 3"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the third page to navigate to on double-click."),
-      allowMultiple: false
-    },
-    {
-      name: "targetIdField3",
-      title: t("ID Field 3"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the ID column on Target Page 3 for record lookup."),
-      allowMultiple: false
-    }
+    { name: "targetPage3", title: t("Target Page 3"), optional: true, type: "Text", description: t("Name of the third page to navigate to on double-click."), allowMultiple: false },
+    { name: "targetIdField3", title: t("ID Field 3"), optional: true, type: "Text", description: t("Name of the ID column on Target Page 3 for record lookup."), allowMultiple: false }
   ];
 }
 
@@ -682,18 +593,14 @@ function updateUIAfterNavigation() {
 // --- DEFINE columnsMappingOptions BEFORE ready() if it's a global constant ---
 const columnsMappingOptions = getGristOptions(); // columnsMappingOptions should be derived from getGristOptions()
 
-
 // This function should ONLY set up Grist listeners
 async function configureGristSettings() {
   // CRUD operations on records in table
   grist.onRecords(updateCalendar);
-
   // When cursor (selected record) change in the table
   grist.onRecord(gristSelectedRecordChanged);
-
   // When options changed in the widget configuration (reaction to perspective change)
   grist.onOptions(onGristSettingsChanged);
-
   // To get types, we need to know the tableId. This is a way to get it.
   grist.on('message', (e) => {
     if (e.tableId && e.mappingsChange) {
@@ -706,6 +613,7 @@ async function configureGristSettings() {
   grist.on("userAttributes", function(userAttrs) {
     console.log("RapidShade: Received user attributes:", userAttrs); // THIS SHOULD FINALLY FIRE!
     const options = userAttrs || {}; // userAttrs directly contains the custom options
+
     window.gristCalendar.doubleClickActionTargetPage1 = options.targetPage1;
     window.gristCalendar.doubleClickActionTargetIdField1 = options.targetIdField1;
     window.gristCalendar.doubleClickActionTargetPage2 = options.targetPage2;
@@ -715,302 +623,291 @@ async function configureGristSettings() {
 
     // Ensure all options are defined, even if empty strings or null
     Object.keys(window.gristCalendar).forEach(key => {
-        if (key.startsWith('doubleClickActionTarget') && (window.gristCalendar[key] === undefined || window.gristCalendar[key] === null)) {
-            window.gristCalendar[key] = '';
-        }
+      if (key.startsWith('doubleClickActionTarget') && (window.gristCalendar[key] === null || window.gristCalendar[key] === undefined)) {
+        window.gristCalendar[key] = ''; // Ensure they are empty strings if not set
+      }
     });
 
-    if (calendarHandler) {
-      calendarHandler.setDoubleClickTargets([
-        { page: options.targetPage1, idField: options.targetIdField1 },
-        { page: options.targetPage2, idField: options.targetIdField2 },
-        { page: options.targetPage3, idField: options.targetIdField3 },
-      ].filter(t => t.page)); // Filter out entries where no page is selected
+    // === NEW LOGIC: Pass configured targets to CalendarHandler ===
+    const targets = [];
+    if (window.gristCalendar.doubleClickActionTargetPage1 && window.gristCalendar.doubleClickActionTargetIdField1) {
+      targets.push({
+        page: window.gristCalendar.doubleClickActionTargetPage1,
+        idField: window.gristCalendar.doubleClickActionTargetIdField1
+      });
     }
-  });
-
-  // TODO: remove optional chaining once grist-plugin-api.js includes this function.
-  grist.enableKeyboardShortcuts?.();
-
-  // DO NOT PUT grist.ready() HERE. It should be in the ready() function.
-}
-
-async function translatePage() {
-  const backendOptions = {
-    loadPath: 'i18n/{{lng}}/{{ns}}.json',
-    addPath: 'i18n/add/{{lng}}/{{ns}}',
-    // don't allow cross domain requests
-    crossDomain: false,
-    // don't include credentials on cross domain requests
-    withCredentials: false,
-    // overrideMimeType sets request.overrideMimeType("application/json")
-    overrideMimeType: false,
-  }
-  await i18next.use(i18nextHttpBackend).init({
-    lng: getLanguage(),
-    fallbackLng: 'en', // Recommended: Fallback language if current language translations are missing
-    debug: false,
-    saveMissing: false, // Correctly disables saving missing translations
-    returnNull: false,
-    ns: ['translation'], // Recommended: Define your namespace
-    defaultNS: 'translation', // Recommended: Set default namespace
-    backend: backendOptions, // Assuming backendOptions is defined correctly elsewhere
-    interpolation: {
-      escapeValue: false, // Useful if you're not using a framework that escapes by default
+    if (window.gristCalendar.doubleClickActionTargetPage2 && window.gristCalendar.doubleClickActionTargetIdField2) {
+      targets.push({
+        page: window.gristCalendar.doubleClickActionTargetPage2,
+        idField: window.gristCalendar.doubleClickActionTargetIdField2
+      });
     }
-  }, function (err, t) {
-    if (err) {
-      console.error("RapidShade: i18next initialization error:", err);
+    if (window.gristCalendar.doubleClickActionTargetPage3 && window.gristCalendar.doubleClickActionTargetIdField3) {
+      targets.push({
+        page: window.gristCalendar.doubleClickActionTargetPage3,
+        idField: window.gristCalendar.doubleClickActionTargetIdField3
+      });
     }
-    document.body.querySelectorAll('[data-i18n]').forEach(function (elem) {
-      elem.textContent = t(elem.dataset.i18n);
-    });
-  });
-}
-
-// When a user selects a record in the table, we want to select it on the calendar.
-function gristSelectedRecordChanged(record, mappings) {
-  const mappedRecord = grist.mapColumnNames(record, mappings);
-  if (mappedRecord && calendarHandler) {
-    calendarHandler.selectRecord(mappedRecord);
-  }
-}
-
-// when a user changes the perspective in the GUI, we want to save it as grist option
-// - rest of logic is in reaction to the grist option changed
-async function calendarViewChanges(radiobutton) {
-  changeCalendarView(radiobutton.value);
-  if (!isReadOnly) {
-    await grist.setOption('calendarViewPerspective', radiobutton.value);
-  }
-}
-
-// When a user changes a perspective of calendar, we want this to be persisted in grist options between sessions.
-// this is the place where we can react to this change and update calendar view, or when new session is started
-// (so we are loading previous settings)
-function onGristSettingsChanged(options, settings) {
-  const view = options?.calendarViewPerspective ?? 'week';
-  changeCalendarView(view);
-  colTypesFetcher.setAccessLevel(settings.accessLevel);
-};
-
-function changeCalendarView(view) {
-  selectRadioButton(view);
-  calendarHandler.changeView(view);
-}
-
-// saving events to the table or updating existing one - basing on if ID is present or not in the send event
-async function upsertGristRecord(gristEvent) {
-  try {
-    //to update the table, grist requires another format that it is returning by grist in onRecords event (it's flat is
-    // onRecords event and nested ({id:..., fields:{}}) in grist table), so it needs to be converted
-    const mappedRecord = grist.mapColumnNamesBack(gristEvent);if (!mappedRecord) { return; }
-    // we cannot save record is some unexpected columns are defined in fields, so we need to remove them
-    delete mappedRecord.cid;
-    // We are converting dates to numbers because Grist doesn't accept Date objects
-    mappedRecord.startDate = mappedRecord.startDate.getTime();
-    if (mappedRecord.endDate) { mappedRecord.endDate = mappedRecord.endDate.getTime();}
-    //If it is a new record, use addRecord otherwise use updateRecord.
-    if (!mappedRecord.id) {
-      await grist.addRecord(mappedRecord);
+    // Update the CalendarHandler with the new targets
+    if (calendarHandler) { // Ensure calendarHandler is initialized
+      calendarHandler.setDoubleClickTargets(targets);
     } else {
-      await grist.updateRecord(mappedRecord.id, mappedRecord);
+      console.warn("RapidShade: calendarHandler not yet initialized when userAttributes received. Targets will be set on initialization.");
     }
-  } catch (err) {
-    console.log(err);
-    alert('Failed to save record - ' + err);
-  }
+    // ==========================================================
+  });
 }
 
-async function deleteEvent(eventInfo) {
-  if (!eventInfo.id) { return; }
-  try {
-    await grist.deleteRecords([eventInfo.id]);
-  } catch (err) {
-    console.log(err);
-    alert('Failed to delete record - ' + err);
-  }
-}
-
-// Map of column types needed to adjust dates. Grist passes dates as numbers of seconds from epoch,
-// unless column type is DateTime, in which case it is milliseconds.
-const colTypesFetcher = {
-  _colTypes: ['Date', 'Date'], // Default values for startDate, endDate.
-  _tableId: null,
-  async gotNewMappings(tableId) {
-    this._tableId = tableId;
-    await this.fetch();
-  },
-  async fetch() {
-    if (!this._tableId) { return; }
-    const gristDoc = new grist.DocAPI(this._tableId);
-    const colTypes = await gristDoc.fetchTable('GristMetadata').then(meta => {
-      const col = meta.columns.find(c => c.id === '_grist_Datetime');
-      // For older Grist versions, there's no _grist_Datetime table, so treat all as Date.
-      if (!col) { return ['Date', 'Date']; }
-      const dateTimeCols = new Set(col.colIds);
-      // Determine colType for the two relevant columns.
-      // THIS IS THE CORRECTED LINE:
-      const mappings = grist.getMappings();
-      return [
-        dateTimeCols.has(mappings.startDate) ? 'DateTime' : 'Date',
-        dateTimeCols.has(mappings.endDate) ? 'DateTime' : 'Date',
-      ];
-    }).catch(e => {
-      console.log("Failed to fetch column types", e);
-      return ['Date', 'Date'];
-    });
-    this._colTypes = colTypes;
-  },
-  getColTypes() { return this._colTypes; },
-  setAccessLevel(level) {
-    // If the access level doesn't support fetching metadata, then we don't try to fetch it.
-    if (level === 'none' || level === 'read') {
-      this._tableId = null;
-    }
-  }
-};
-
-// Convert grist date/datetime (number) to TZDate (local Date).
-function getAdjustedDate(gristDate, colType) {
-  if (gristDate === undefined || gristDate === null) {
-    return gristDate;
-  }
-  // Grist Dates are seconds, DateTimes are milliseconds.
-  return new TZDate(colType === 'Date' ? gristDate * 1000 : gristDate);
-}
-
-// Convert ToastUI event object to a Grist-compatible record.
-function toGristEvent(event, sourceRecord) {
-  const isAllDay = event.isAllDay;
-  const startDate = event.start;
-  const endDate = event.end || event.start; // Default end date to start date if not present
-
-  return {
-    id: event.id || undefined, // Keep id if updating, undefined for new record
-    startDate: startDate.getTime(), // Convert TZDate to milliseconds
-    endDate: endDate.getTime(),   // Convert TZDate to milliseconds
-    title: event.title,
-    isAllDay: isAllDay,
-    type: event.calendarId === CALENDAR_NAME ? event.type : undefined,
-    // Include other fields from the original record if needed, but avoid overwriting explicitly set fields
-    ...sourceRecord,
-    // Ensure that fields explicitly set by the calendar take precedence
-    startDate: startDate.getTime(),
-    endDate: endDate.getTime(),
-    title: event.title,
-    isAllDay: isAllDay,
-    type: event.type
-  };
-}
-
-// update all events on the calendar
-async function updateCalendar(records, mappings) {
-  if (!calendarHandler) { return; }
-  // Only process records that have at least a start date and title.
-  const mappedRecords = records.map(record => grist.mapColumnNames(record, mappings)).filter(isRecordValid);
-
-  // Convert mapped records to ToastUI format.
-  const tuiEvents = [];
-  for (const record of mappedRecords) {
-    const [startType, endType] = await colTypesFetcher.getColTypes();
-    const startDate = getAdjustedDate(record.startDate, startType);
-    const endDate = getAdjustedDate(record.endDate, endType);
-
-    // If endDate is before startDate, swap them.
-    if (endDate && endDate < startDate) {
-      [startDate, endDate] = [endDate, startDate];
-    }
-    // If endDate is missing but it's an all-day event, set endDate to startDate for display.
-    if (!endDate && record.isAllDay) {
-      endDate = startDate;
-    }
-
-    tuiEvents.push({
-      id: record.id,
-      calendarId: CALENDAR_NAME,
-      title: record.title,
-      start: startDate,
-      end: endDate,
-      isAllDay: Boolean(record.isAllDay),
-      category: record.isAllDay ? 'allday' : 'time',
-      // Store original raw record for potential updates.
-      raw: record,
-      type: record.type,
-      color: record.color,
-      backgroundColor: record.backgroundColor,
-      borderColor: record.borderColor,
-      dragBackgroundColor: record.dragBackgroundColor,
-    });
-  }
-  calendarHandler.setEvents(new Map(tuiEvents.map(ev => [ev.id, ev])));
-  calendarHandler.renderVisibleEvents();
-  calendarHandler.refreshSelectedRecord();
-}
-
-// Show the widget in the Grist UI.
+// Function to put focus on the widget whenever clicked or a row is selected programmatically.
 function focusWidget() {
-  // Grist has a bug that focusWidget can stop working. This logs an error when it does.
-  grist.focusWidget().catch((e) => console.log('Failed to focus widget', e));
+  grist.set={{grist.set}}AccessLevel('full');
 }
 
-// RapidShade GEM page.js (around line 520, replace the existing dblclick listener content)
-// This listener handles ALL double-clicks on the document.
-document.addEventListener('dblclick', async (ev) => {
-  console.log("RapidShade: Double-click event triggered."); // Log every dblclick
+// Fetches all records from the mapped table and updates the calendar.
+// Called on grist.onRecords, and also initially.
+async function updateCalendar(records, mappings) {
+  const currentMappings = mappings; // Stored here for `gristSelectedRecordChanged` to have access
+  if (records.length > 0) {
+    const [startType, endType] = await colTypesFetcher.getColTypes();
+    const events = new Map();
+    for (const record of records) {
+      const startDate = getAdjustedDate(record.startDate, startType);
+      const endDate = getAdjustedDate(record.endDate, endType);
+      if (isRecordValid(record)) {
+        events.set(record.id, {
+          id: record.id,
+          calendarId: CALENDAR_NAME,
+          title: record.title,
+          start: new TZDate(startDate),
+          end: new TZDate(endDate),
+          isAllDay: record.isAllDay ?? false,
+          category: record.isAllDay ? 'allday' : 'time',
+          backgroundColor: record.type && grist.get==='grist-plugin-api'().get.lookup('type', record.type).color,
+          raw: record, // Original record, for convenience
+        });
+      }
+    }
+    calendarHandler.setEvents(events);
+    calendarHandler.renderVisibleEvents();
 
-  // Check if the double-click was on a calendar event
+    if (currentMappings.startDate && currentMappings.title && currentMappings.id) {
+      await grist.ready({
+        required: [currentMappings.startDate, currentMappings.title, currentMappings.id],
+        optional: [currentMappings.endDate, currentMappings.isAllDay, currentMappings.type],
+      });
+    }
+  } else {
+    // If no records, clear events and ensure required mappings are still set for grist.ready
+    calendarHandler.setEvents(new Map());
+    calendarHandler.renderVisibleEvents(); // Clear displayed events
+    if (mappings.startDate && mappings.title && mappings.id) {
+      await grist.ready({
+        required: [mappings.startDate, mappings.title, mappings.id],
+        optional: [mappings.endDate, mappings.isAllDay, mappings.type],
+      });
+    }
+  }
+  // The first time that updateCalendar is called, it happens before onRecord, so we need to select the record
+  // explicitly in case we need to select something.
+  gristSelectedRecordChanged(grist.get==='grist-plugin-api'().getCursorPos().rowId);
+}
+
+// Adjusts date depending on column type (Date vs DateTime).
+function getAdjustedDate(date, colType) {
+  const isDateTime = colType === 'DateTime';
+  return date === null ? undefined : new Date(isDateTime ? date : date * 1000);
+}
+
+// When selected record changes in the Grist table.
+async function gristSelectedRecordChanged(rowId) {
+  const record = grist.get==='grist-plugin-api'().get.records.get(rowId);
+  if (record) {
+    await calendarHandler.selectRecord(record);
+    calendarHandler.refreshSelectedRecord();
+  }
+}
+
+// Updates the calendar view when the widget settings (options) change.
+async function onGristSettingsChanged(options, mappings) {
+  if (options.defaultView && calendarHandler.calendar.getViewName() !== options.defaultView) {
+    calendarHandler.changeView(options.defaultView);
+  }
+  // Update colors if they are changed in the options
+  const newMainColor = options.mainColor ?? 'var(--grist-theme-input-readonly-border)';
+  if (calendarHandler._mainColor !== newMainColor) {
+      calendarHandler._mainColor = newMainColor;
+      calendarHandler.calendar.setOptions({
+          calendars: [{id: CALENDAR_NAME, backgroundColor: newMainColor, borderColor: newMainColor}]
+      });
+  }
+
+  const newCalendarBackgroundColor = options.calendarBackgroundColor ?? 'var(--grist-theme-page-panels-main-panel-bg)';
+  if (calendarHandler._calendarBackgroundColor !== newCalendarBackgroundColor) {
+      calendarHandler._calendarBackgroundColor = newCalendarBackgroundColor;
+      calendarHandler.calendar.setTheme({
+          common: {backgroundColor: newCalendarBackgroundColor}
+      });
+  }
+  const newSelectedColor = options.selectedColor ?? 'var(--grist-theme-top-bar-button-primary-fg)';
+  if (calendarHandler._selectedColor !== newSelectedColor) {
+    calendarHandler._selectedColor = newSelectedColor;
+    calendarHandler.refreshSelectedRecord(); // Re-highlight to apply new color
+  }
+  const newBorderStyle = options.borderStyle ?? '1px solid var(--grist-theme-table-body-border)';
+  if (calendarHandler._borderStyle !== newBorderStyle) {
+      calendarHandler._borderStyle = newBorderStyle;
+      // Reapply entire theme to update borders
+      calendarHandler.calendar.setTheme(calendarHandler._calendarTheme());
+  }
+  const newAccentColor = options.accentColor ?? 'var(--grist-theme-accent-text)';
+  if (calendarHandler._accentColor !== newAccentColor) {
+      calendarHandler._accentColor = newAccentColor;
+      calendarHandler.calendar.setTheme(calendarHandler._calendarTheme());
+  }
+  const newTextColor = options.textColor ?? 'var(--grist-theme-text)';
+  if (calendarHandler._textColor !== newTextColor) {
+      calendarHandler._textColor = newTextColor;
+      calendarHandler.calendar.setTheme(calendarHandler._calendarTheme());
+  }
+  const newSelectionColor = options.selectionColor ?? 'var(--grist-theme-selection)';
+  if (calendarHandler._selectionColor !== newSelectionColor) {
+      calendarHandler._selectionColor = newSelectionColor;
+      calendarHandler.calendar.setTheme(calendarHandler._calendarTheme());
+  }
+}
+
+
+// --- Grist Widget Configuration (runs once when widget is loaded) ---
+ready(async function() {
+  calendarHandler = new CalendarHandler(); // Initialize the CalendarHandler
+  await grist.ready({
+    columns: columnsMappingOptions,
+    required: ["startDate", "title"], // Only these are strictly required initially for grist.ready
+    optional: ["endDate", "isAllDay", "type", "targetPage1", "targetIdField1", "targetPage2", "targetIdField2", "targetPage3", "targetIdField3"],
+    // Add custom options for the right-hand panel
+    widgetOptions: {
+      defaultView: {
+        title: t("Default View"),
+        type: "Choice",
+        choices: [
+          { value: "day", label: t("Day") },
+          { value: "week", label: t("Week") },
+          { value: "month", label: t("Month") },
+        ],
+        description: t("Default calendar view"),
+        defaultValue: "week",
+      },
+      mainColor: {
+        title: t("Main Color"),
+        type: "Text",
+        description: t("Main color for events and calendar elements (CSS variable or hex)"),
+        defaultValue: 'var(--grist-theme-input-readonly-border)'
+      },
+      calendarBackgroundColor: {
+        title: t("Calendar Background Color"),
+        type: "Text",
+        description: t("Background color of the calendar area (CSS variable or hex)"),
+        defaultValue: 'var(--grist-theme-page-panels-main-panel-bg)'
+      },
+      selectedColor: {
+        title: t("Selected Event Color"),
+        type: "Text",
+        description: t("Color to highlight the selected event (CSS variable or hex)"),
+        defaultValue: 'var(--grist-theme-top-bar-button-primary-fg)'
+      },
+      borderStyle: {
+        title: t("Border Style"),
+        type: "Text",
+        description: t("CSS border style for calendar grids"),
+        defaultValue: '1px solid var(--grist-theme-table-body-border)'
+      },
+      accentColor: {
+        title: t("Accent Color"),
+        type: "Text",
+        description: t("Accent color for indicators (CSS variable or hex)"),
+        defaultValue: 'var(--grist-theme-accent-text)'
+      },
+      textColor: {
+        title: t("Text Color"),
+        type: "Text",
+        description: t("General text color for calendar elements (CSS variable or hex)"),
+        defaultValue: 'var(--grist-theme-text)'
+      },
+      selectionColor: {
+        title: t("Selection Color"),
+        type: "Text",
+        description: t("Color for grid selections (CSS variable or hex)"),
+        defaultValue: 'var(--grist-theme-selection)'
+      }
+    }
+  });
+
+  // Now configure Grist settings and listeners
+  configureGristSettings();
+
+  // Initial update of UI after the calendar is ready
+  updateUIAfterNavigation();
+});
+
+
+// RapidShade - GEM - page.js (around line 520, replace the existing dblclick listener content)
+
+document.addEventListener('dblclick', async (ev) => {
+  if (!ev.target || !calendarHandler || !calendarHandler.calendar) { return; }
+
   const eventDom = ev.target.closest("[data-event-id]");
   if (!eventDom) {
-    console.log("RapidShade: Double-click: No event DOM element found.");
     // If no event was double-clicked, allow default Grist behavior or do nothing.
-    // The original logic only applied if an event was clicked, we'll follow that.
     return;
   }
 
+  // First get the id of the event at hand.
   const eventId = Number(eventDom.dataset.eventId);
-  if (!eventId || Number.isNaN(eventId)) {
-    console.log("RapidShade: Double-click: Invalid event ID.");
-    return;
-  }
+  if (!eventId || Number.isNaN(eventId)) { return; }
 
-  console.log("RapidShade: Double-clicked event ID:", eventId);
+  // Now get the model from the calendar.
   const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
-  if (!event) {
-    console.log("RapidShade: Event object not found for ID:", eventId);
-    return;
-  }
+  if (!event) { return; }
 
-  console.log("RapidShade: Event object retrieved:", event);
-
-  // IMPORTANT: Now we use the double-click action logic
-  const targetPage1 = window.gristCalendar.doubleClickActionTargetPage1;
-  const targetIdField1 = window.gristCalendar.doubleClickActionTargetIdField1;
-
-  console.log("RapidShade: Target Page 1:", targetPage1, "Target ID Field 1:", targetIdField1);
-
-  // Prepare targets based on what's configured
-  const targets = [];
-  if (targetPage1) {
-    targets.push({ page: targetPage1, idField: targetIdField1 });
-  }
-  if (window.gristCalendar.doubleClickActionTargetPage2) {
-    targets.push({ page: window.gristCalendar.doubleClickActionTargetPage2, idField: window.gristCalendar.doubleClickActionTargetIdField2 });
-  }
-  if (window.gristCalendar.doubleClickActionTargetPage3) {
-    targets.push({ page: window.gristCalendar.doubleClickActionTargetPage3, idField: window.gristCalendar.doubleClickActionTargetIdField3 });
-  }
-
-  // Pass event.id (which is the Grist rowId) to the handler
-  if (targets.length > 0) {
-    console.log("RapidShade: Custom double-click action configured. Calling handler.");
-    await calendarHandler.handleDoubleClickAction(event.id);
-  } else {
-    console.log("RapidShade: No specific double-click action configured for Target Page 1.");
-    console.log("RapidShade: Showing Record Card.");
-    // Default behavior: set cursor and show record card
-    await grist.setCursorPos({rowId: event.id});
-    await grist.commandApi.run('viewAsCard');
-    console.log("RapidShade: Default Record Card action called.");
-  }
+  // Now delegate to the new handleDoubleClickAction in CalendarHandler
+  await calendarHandler.handleDoubleClickAction(event.id);
 });
+
+// Helper for upserting events; either creates a new event, or updates an existing one.
+async function upsertEvent(eventInfo) {
+  const recordId = eventInfo.id;
+  const raw = eventInfo.raw; // This will contain current values, including unmapped ones
+
+  // Map back to Grist column names
+  const updates = {};
+  if (eventInfo.title !== undefined) updates.title = eventInfo.title;
+  if (eventInfo.start !== undefined) updates.startDate = eventInfo.start.getTime() / 1000;
+  if (eventInfo.end !== undefined) updates.endDate = eventInfo.end.getTime() / 1000;
+  if (eventInfo.isAllDay !== undefined) updates.isAllDay = eventInfo.isAllDay;
+
+  try {
+    if (recordId) {
+      // Update existing record
+      await grist.updateRecords({ id: recordId, fields: updates });
+      console.log('Event updated:', recordId, updates);
+    } else {
+      // Create new record
+      const newRecordIds = await grist.addRecords({ fields: updates });
+      console.log('Event added, new ID:', newRecordIds[0]);
+    }
+  } catch (error) {
+    console.error('Failed to upsert event:', error);
+    alert('Failed to save event. Check your mappings and permissions.');
+  }
+}
+
+// Helper for deleting events.
+async function deleteEvent(eventInfo) {
+  try {
+    await grist.deleteRecords([eventInfo.id]);
+    console.log('Event deleted:', eventInfo.id);
+  } catch (error) {
+    console.error('Failed to delete event:', error);
+    alert('Failed to delete event. Check your permissions.');
+  }
+}
