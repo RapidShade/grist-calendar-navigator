@@ -626,7 +626,7 @@ function getGristOptions() {
       name: "targetPage1",
       title: t("Target Page 1"),
       optional: true,
-      type: "Text",
+      type: "Any",
       description: t("Name of the first page to navigate to on double-click."),
       allowMultiple: false
     },
@@ -634,7 +634,7 @@ function getGristOptions() {
       name: "targetIdField1",
       title: t("ID Field 1"),
       optional: true,
-      type: "Text",
+      type: "Any",
       description: t("Name of the ID column on Target Page 1 for record lookup."),
       allowMultiple: false
     },
@@ -643,7 +643,7 @@ function getGristOptions() {
       name: "targetPage2",
       title: t("Target Page 2"),
       optional: true,
-      type: "Text",
+      type: "Any",
       description: t("Name of the second page to navigate to on double-click."),
       allowMultiple: false
     },
@@ -651,7 +651,7 @@ function getGristOptions() {
       name: "targetIdField2",
       title: t("ID Field 2"),
       optional: true,
-      type: "Text",
+      type: "Any",
       description: t("Name of the ID column on Target Page 2 for record lookup."),
       allowMultiple: false
     },
@@ -660,7 +660,7 @@ function getGristOptions() {
       name: "targetPage3",
       title: t("Target Page 3"),
       optional: true,
-      type: "Text",
+      type: "Any",
       description: t("Name of the third page to navigate to on double-click."),
       allowMultiple: false
     },
@@ -668,7 +668,7 @@ function getGristOptions() {
       name: "targetIdField3",
       title: t("ID Field 3"),
       optional: true,
-      type: "Text",
+      type: "Any",
       description: t("Name of the ID column on Target Page 3 for record lookup."),
       allowMultiple: false
     }
