@@ -405,16 +405,14 @@ class CalendarHandler {
       // The grist.navigate API can take 'row' for rowId, but not directly a lookup for another field.
       // So we navigate to the page and then use setSelectedRows.
       // NOTE: This assumes the target page displays a table that contains the `idFieldName`
-      // and that the `recordId` from the calendar is a value in that `idFieldName` column.
+      // and that the `recordId` from the calendar *is* a value in that `idFieldName` column.
+      // If your target table uses a *different* ID for the same logical record,
+      // you would need more advanced logic involving fetching the target table and performing a lookup.
       await grist.navigate({ page: pageName });
 
       // After navigating, we need to find the specific row in the new table based on idFieldName.
-      // This is a more complex step as we'd need to know the tableId of the target page
-      // and fetch its data to find the corresponding Grist rowId.
       // For simplicity, we will assume `recordId` passed from the calendar *is* the Grist `rowId`
-      // for the target table as well. This is often the case if you're linking records directly.
-      // If your target table uses a *different* ID for the same logical record,
-      // you would need more advanced logic involving fetching the target table and performing a lookup.
+      // for the target table as well.
       await grist.setSelectedRows([recordId]);
 
       console.log(`Mapsd to page "${pageName}" and attempted to select record with ID: ${recordId} using field: ${idFieldName}`);
@@ -696,7 +694,7 @@ async function configureGristSettings() {
     if (e.tableId && e.mappingsChange) { colTypesFetcher.gotNewMappings(e.tableId); }
   });
 
-  // ADD THIS BLOCK:
+  // This is the correct place for the grist.on("userAttributes") listener
   grist.on("userAttributes", function(userAttrs) {
     console.log("RapidShade: Received user attributes:", userAttrs); // KEEP THIS LOG
     const options = userAttrs.doubleClickActions || {};
@@ -715,16 +713,7 @@ async function configureGristSettings() {
       { page: options.targetPage3, idField: options.targetIdField3 },
     ].filter(t => t.page)); // Filter out empty targets
   });
-  // END OF BLOCK TO ADD
 
-  // ... rest of configureGristSettings function (enableKeyboardShortcuts, grist.ready) ...
-  grist.enableKeyboardShortcuts?.();
-
-  // bind columns mapping options to the GUI
-  const columnsMappingOptions = getGristOptions();
-  grist.ready({requiredAccess: 'full', columns: columnsMappingOptions, allowSelectBy: true});
-}  
-  
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
   grist.enableKeyboardShortcuts?.();
 
