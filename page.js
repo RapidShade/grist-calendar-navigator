@@ -737,17 +737,39 @@ async function translatePage() {
     // overrideMimeType sets request.overrideMimeType("application/json")
     overrideMimeType: false,
   }
-  await i18next.use(i18nextHttpBackend).init({
-    lng: getLanguage(),
-    debug: false,
-    saveMissing: true,
-    returnNull: false,
-    backend: backendOptions,
-  }, function (err, t) {
-    document.body.querySelectorAll('[data-i18n]').forEach(function (elem) {
-      elem.textContent = t(elem.dataset.i18n);
-    });
+
+await i18next.use(i18nextHttpBackend).init({
+  lng: getLanguage(),
+  fallbackLng: 'en', // Recommended: Fallback language if current language translations are missing
+  debug: false,
+  saveMissing: false, // Correctly disables saving missing translations
+  returnNull: false,
+  ns: ['translation'], // Recommended: Define your namespace
+  defaultNS: 'translation', // Recommended: Set default namespace
+  backend: backendOptions, // Assuming backendOptions is defined correctly elsewhere
+  interpolation: {
+    escapeValue: false, // Useful if you're not using a framework that escapes by default
+  }
+}, function (err, t) {
+  if (err) {
+    console.error("RapidShade: i18next initialization error:", err);
+  }
+  document.body.querySelectorAll('[data-i18n]').forEach(function (elem) {
+    elem.textContent = t(elem.dataset.i18n);
   });
+});
+  
+//  await i18next.use(i18nextHttpBackend).init({
+//    lng: getLanguage(),
+//    debug: false,
+//    saveMissing: false,
+//    returnNull: false,
+//    backend: backendOptions,
+//  }, function (err, t) {
+//    document.body.querySelectorAll('[data-i18n]').forEach(function (elem) {
+//      elem.textContent = t(elem.dataset.i18n);
+//    });
+//  });
 }
 
 // When a user selects a record in the table, we want to select it on the calendar.
