@@ -728,7 +728,7 @@ async function configureGristSettings() {
     allowSelectBy: true
   });
 } // End of configureGristSettings function (ensure this brace is correctly placed)
-//}
+}
 
 async function translatePage() {
 
