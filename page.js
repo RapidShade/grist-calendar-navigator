@@ -718,7 +718,8 @@ async function configureGristSettings() {
       title: t("ID Field 3"),
       description: t("Name of the ID column on Target Page 3 for record lookup."),
       group: t("Double-Click Actions")
-    }
+    },
+    testAttribute: { label: "Test Parameter", type: "text" } 
   };
 
   grist.ready({
