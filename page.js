@@ -59,8 +59,8 @@ function isRecordValid(record) {
 function configureGristSettings() {
   grist.ready({
     requiredAccess: 'full',
-    columns: columnsMappingOptions, // This defines the column mapping dropdowns
-    userAttributes: customUserAttributes, // This defines our custom text inputs
+    columns: columnsMappingOptions, // This line includes your column pickers
+    userAttributes: customUserAttributes, // This line includes your custom text inputs
     allowSelectBy: true
   });
 
