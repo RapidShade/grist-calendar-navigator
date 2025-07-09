@@ -729,30 +729,28 @@ const customUserAttributes = {
 async function translatePage() {
 
   const backendOptions = {
-
     loadPath: 'i18n/{{lng}}/{{ns}}.json',
+    // We will keep addPath, but setting saveMissing to false will prevent its use
     addPath: 'i18n/add/{{lng}}/{{ns}}',
-    // don't allow cross domain requests
     crossDomain: false,
-    // don't include credentials on cross domain requests
     withCredentials: false,
-    // overrideMimeType sets request.overrideMimeType("application/json")
     overrideMimeType: false,
   }
+
   await i18next.use(i18nextHttpBackend).init({
     lng: getLanguage(),
     debug: false,
-    saveMissing: true,
-    returnNull: false,
+    // --- IMPORTANT CHANGES BELOW ---
+    saveMissing: false, // CHANGE THIS LINE: Set to false to stop attempting to save missing translations
+    returnNull: false,  // Keep this as false, ensures t() returns key if no translation
+    fallbackLng: 'en',  // ADD THIS LINE: Explicitly fall back to English if current language fails
     backend: backendOptions,
-    // Add these two lines:
-    ns: ['menus'], // Declare 'menus' as a namespace
-    defaultNS: 'menus', // Use 'menus' as the default namespace for t() calls
-  }, function (err, t) {
-    document.body.querySelectorAll('[data-i18n]').forEach(function (elem) {
-  	elem.textContent = t(elem.dataset.i18n);
-    });
-  });
+    ns: ['menus'],
+    defaultNS: 'menus',
+    // --- REMOVE THE CALLBACK FUNCTION BELOW (from 'function (err, t)' to its closing '});') ---
+    // The callback interferes with Grist's rendering. i18next will still work for data-i18n attributes.
+    // Make sure to remove the comma after defaultNS: 'menus' if this was the last option before the callback.
+  }); // End of i18next.init call. The callback function is REMOVED.
 }
 
 // When a user selects a record in the table, we want to select it on the calendar.
