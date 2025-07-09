@@ -696,9 +696,6 @@ async function configureGristSettings() {
     if (e.tableId && e.mappingsChange) { colTypesFetcher.gotNewMappings(e.tableId); }
   });
 
-async function configureGristSettings() {
-  // ... existing grist.on calls (onRecords, onRecord, onOptions, on 'message') ...
-
   // ADD THIS BLOCK:
   grist.on("userAttributes", function(userAttrs) {
     console.log("RapidShade: Received user attributes:", userAttrs); // KEEP THIS LOG
