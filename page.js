@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RapidShade: page.js version - " + new Date().toLocaleTimeString()); // KEEP THIS LINE AT THE VERY TOP
+console.log("RAPID_1_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // KEEP THIS LINE AT THE VERY TOP
 
 let calendarHandler;
 
