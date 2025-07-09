@@ -28,6 +28,10 @@
   "Edit": "Edit",
   "Update": "Update",
   "Type": "type",
-  "event category and style": "Event category and style"
-
+  "event category and style": "Event category and style",
+  "doubleClickActions": "Double-Click Actions",
+  "targetPage1": "Target Page 1",
+  "targetIdField1": "Target ID Field 1",
+  "targetPage2": "Target Page 2",
+  "targetIdField2": "Target ID Field 2"
 }
