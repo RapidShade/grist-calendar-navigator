@@ -7,7 +7,7 @@
   "icon": "https://www.gristlabs.com/img/logo.png",
   "components": [
     {
-      "url": "index.html",
+      "url": "https://rapidshade.github.io/grist-calendar-navigator/index.html",
       "type": "data",
       "gristVersion": "1.0.0",
       "minAppVersion": "0.1.0"
