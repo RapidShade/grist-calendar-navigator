@@ -680,29 +680,19 @@ async function configureGristSettings() {
 
 // RapidShade GEN - NEW  customUserAttributes definition
 const customUserAttributes = {
-  // This is the new top-level group definition
   doubleClickActions: {
-    label: t('menus.doubleClickActions'), // This uses your translation
+    label: t('doubleClickActions'), // Removed 'menus.'
     type: 'group',
     children: {
-      // All your existing double-click attributes go inside 'children'
-      targetPage1: { type: 'text', label: t('menus.targetPage1'), description: t('menus.targetPage1Description') },
-      targetIdField1: { type: 'text', label: t('menus.targetIdField1'), description: t('menus.targetIdField1Description') },
-      targetPage2: { type: 'text', label: t('menus.targetPage2'), description: t('menus.targetPage2Description') },
-      targetIdField2: { type: 'text', label: t('menus.targetIdField2'), description: t('menus.targetIdField2Description') },
-      targetPage3: { type: 'text', label: t('menus.targetPage3'), description: t('menus.targetPage3Description') },
-      targetIdField3: { type: 'text', label: t('menus.targetIdField3'), description: t('menus.targetIdField3Description') },
-
-      // If you added testAttribute for debugging and want to keep it in this group
-      // testAttribute: {label: 'Test Parameter', type: 'text'}
+      targetPage1: { type: 'text', label: t('targetPage1'), description: t('targetPage1Description') }, // Removed 'menus.'
+      targetIdField1: { type: 'text', label: t('targetIdField1'), description: t('targetIdField1Description') }, // Removed 'menus.'
+      targetPage2: { type: 'text', label: t('targetPage2'), description: t('targetPage2Description') }, // Removed 'menus.'
+      targetIdField2: { type: 'text', label: t('targetIdField2'), description: t('targetIdField2Description') }, // Removed 'menus.'
+      targetPage3: { type: 'text', label: t('targetPage3'), description: t('targetPage3Description') }, // Removed 'menus.'
+      targetIdField3: { type: 'text', label: t('targetIdField3'), description: t('targetIdField3Description') }, // Removed 'menus.'
     }
   }
-  // If you had any other custom attributes that are NOT part of the doubleClickActions group,
-  // they would go here, outside the 'doubleClickActions' object.
 };
-console.log('<<<___RAPIDSHADE___>>>');
-console.log("Full customUserAttributes object:", JSON.stringify(customUserAttributes, null, 2));
-console.log('***___RAPIDSHADE___***');
   grist.ready({
     requiredAccess: 'full',
     columns: columnsMappingOptions, // This defines the column mapping dropdowns
@@ -731,9 +721,12 @@ async function translatePage() {
     saveMissing: true,
     returnNull: false,
     backend: backendOptions,
+    // Add these two lines:
+    ns: ['menus'], // Declare 'menus' as a namespace
+    defaultNS: 'menus', // Use 'menus' as the default namespace for t() calls
   }, function (err, t) {
     document.body.querySelectorAll('[data-i18n]').forEach(function (elem) {
-      elem.textContent = t(elem.dataset.i18n);
+  	elem.textContent = t(elem.dataset.i18n);
     });
   });
 }
