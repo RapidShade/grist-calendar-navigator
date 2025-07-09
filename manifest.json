@@ -13,5 +13,33 @@
       "minAppVersion": "0.1.0"
     }
   ],
-  "dataTables": ["table1"]
+  "dataTables": ["table1"],
+  "customUserAttributes": {
+    "openCardOnDblClick": {
+      "label": "Double-Click Actions",
+      "description": "Determines what happens when you double-click an event.",
+      "type": "Untyped",
+      "options": [
+        { "value": "viewCard", "label": "View Record Card" },
+        { "value": "openPage", "label": "Open Detail Page" },
+        { "value": "doNothing", "label": "Do Nothing" }
+      ]
+    },
+    "dateStartCol": { "type": "column", "label": "Date Start", "description": "Column with event start date" },
+    "dateEndCol": { "type": "column", "label": "Date End", "description": "Column with event end date" },
+    "titleCol": { "type": "column", "label": "Title", "description": "Column with event title" },
+    "categoryCol": { "type": "column", "label": "Category", "description": "Column with event category" },
+    "allDayCol": { "type": "column", "label": "All Day", "description": "Column indicating if event is all-day" },
+    "locationCol": { "type": "column", "label": "Location", "description": "Column with event location" },
+    "rawColorCol": { "type": "column", "label": "Color", "description": "Column with event color" },
+    "rawBgColorCol": { "type": "column", "label": "Background Color", "description": "Column with event background color" },
+    "rawBorderColorCol": { "type": "column", "label": "Border Color", "description": "Column with event border color" },
+    "rawDragBgColorCol": { "type": "column", "label": "Drag Background Color", "description": "Column with event drag background color" },
+    "rawColorHoverCol": { "type": "column", "label": "Color (Hover)", "description": "Column with event color on hover" },
+    "rawBgColorHoverCol": { "type": "column", "label": "Background Color (Hover)", "description": "Column with event background color on hover" },
+    "rawBorderColorHoverCol": { "type": "column", "label": "Border Color (Hover)", "description": "Column with event border color on hover" },
+    "rawDragBgColorHoverCol": { "type": "column", "label": "Drag Background Color (Hover)", "description": "Column with event drag background color on hover" },
+    "urlCol": { "type": "column", "label": "URL", "description": "Column with event URL" },
+    "toggleCols": { "type": "columns", "label": "Toggle Columns", "description": "Columns to show/hide in the event detail" }
+  }
 }
