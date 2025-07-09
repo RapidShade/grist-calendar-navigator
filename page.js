@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_1202_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+console.log("RAPID1198_1111_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
 
 let calendarHandler;
 
@@ -307,10 +307,11 @@ class CalendarHandler {
         const event = this.calendar.getElement(record.id, CALENDAR_NAME);
         if (!event) { return; }
 
-        // Only scroll into view if the event is not fully on-screen.
         const container = event.closest('.toastui-calendar-time');
-        // ADD THIS CHECK FOR CONTAINER:
-        if (!container) { return; }
+        // FIX: Ensure container exists before attempting to scroll.
+        if (!container) { return; } 
+
+        // Only scroll into view if the event is not fully on-screen.
         const containerTop = container.scrollTop;
         const containerBottom = containerTop + container.clientHeight;
         const eventTop = event.offsetTop;
@@ -702,8 +703,11 @@ async function configureGristSettings() {
   // This is the correct place for the grist.on("userAttributes") listener
   grist.on("userAttributes", function(userAttrs) {
     console.log("RapidShade: Received user attributes:", userAttrs); // KEEP THIS LOG
-    const options = userAttrs.doubleClickActions || {};
-    console.log("RapidShade: Double-click options from userAttrs:", options); // ADDED LOG
+    // FIX: Removed incorrect nesting 'doubleClickActions'. Custom widget options are directly on userAttrs.
+    const options = userAttrs || {}; // Correctly reference userAttrs directly for options
+
+    console.log("RapidShade: Double-click options from userAttrs (after correction):", options); // ADDED LOG for debugging
+
     window.gristCalendar.doubleClickActionTargetPage1 = options.targetPage1;
     window.gristCalendar.doubleClickActionTargetIdField1 = options.targetIdField1;
     window.gristCalendar.doubleClickActionTargetPage2 = options.targetPage2;
@@ -711,8 +715,6 @@ async function configureGristSettings() {
     window.gristCalendar.doubleClickActionTargetPage3 = options.targetPage3;
     window.gristCalendar.doubleClickActionTargetIdField3 = options.targetIdField3;
 
-    // You also need to call the setDoubleClickTargets method of your CalendarHandler
-    // This assumes calendarHandler is already initialized at this point.
     calendarHandler.setDoubleClickTargets([
       { page: options.targetPage1, idField: options.targetIdField1 },
       { page: options.targetPage2, idField: options.targetIdField2 },
@@ -1088,60 +1090,6 @@ function clean(obj) {
   return Object.fromEntries(Object.entries(obj).filter(([k, v]) => v !== undefined));
 }
 
-// RapidShade - GEM - DEBUG VERSION
-/*
-document.addEventListener('dblclick', async (ev) => {
-  console.log("RapidShade: Double-click event triggered."); // ADD THIS
-  if (!ev.target || !calendarHandler.calendar) {
-    console.log("RapidShade: Double-click: Target or calendar handler missing."); // ADD THIS
-    return;
-  }
-
-  const eventDom = ev.target.closest("[data-event-id]");
-  if (!eventDom) {
-    console.log("RapidShade: Double-click: No event DOM element found."); // ADD THIS
-    return;
-  }
-
-  const eventId = Number(eventDom.dataset.eventId);
-  if (Number.isNaN(eventId)) {
-    console.warn("RapidShade: Double-click event ID is not a number.");
-    return;
-  }
-  console.log("RapidShade: Double-clicked event ID:", eventId); // ADD THIS
-
-  const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
-  if (!event) {
-    console.warn("RapidShade: Double-clicked event not found in calendar model.");
-    return;
-  }
-  console.log("RapidShade: Event object retrieved:", event); // ADD THIS
-
-  const doubleClickActionTargetPage1 = window.gristCalendar.doubleClickActionTargetPage1;
-  const doubleClickActionTargetIdField1 = window.gristCalendar.doubleClickActionTargetIdField1;
-
-  console.log("RapidShade: Target Page 1:", doubleClickActionTargetPage1, "Target ID Field 1:", doubleClickActionTargetIdField1); // ADD THIS
-
-  if (doubleClickActionTargetPage1) {
-    console.log(`RapidShade: Navigating to Target Page 1: ${doubleClickActionTargetPage1} with Event ID: ${event.id}`); // ADD THIS
-    await grist.navigate({
-      pageRef: doubleClickActionTargetPage1,
-      rowRef: doubleClickActionTargetIdField1 ? {
-        tableRef: event.tableId,
-        rowId: event.id
-      } : undefined
-    });
-    console.log("RapidShade: grist.navigate() called."); // ADD THIS
-  } else {
-    console.log("RapidShade: No specific double-click action configured for Target Page 1."); // ADD THIS
-    // Default action if no specific target page is configured
-    console.log("RapidShade: Showing Record Card.");
-    await grist.setCursorPos({ rowId: event.id });
-    await grist.commandApi.run('viewAsCard');
-    console.log("RapidShade: Default Record Card action called."); // ADD THIS
-  }
-});
-*/
 // RapidShade - GEM - page.js (around line 520, replace the existing dblclick listener content)
 document.addEventListener('dblclick', async (ev) => {
   if (!ev.target || !calendarHandler.calendar) { return; }
@@ -1161,42 +1109,3 @@ document.addEventListener('dblclick', async (ev) => {
   // Call our new custom handler
   await calendarHandler.handleDoubleClickAction(event.id);
 });
-
-// HACK: show Record Card popup on dblclick.
-//document.addEventListener('dblclick', async (ev) => {
-//  // tui calendar shows a popup on mouseup, and there is no way to customize it.
-//  // So we turn it off (by leaving useDetailPopup to false), and show the Record Card
-//  // popup ourselves.
-//
-//  // Code that I read to make it happen:
-//  //
-//  // https://github.com/nhn/tui.calendar/blob/b53e765e8d896ab7c63d9b9b9515904119a72f46/apps/calendar/src/components/events/timeEvent.tsx#L233
-//  // if (isClick && useDetailPopup && eventContainerRef.current) {
-//  //   showDetailPopup(
-//  //     {
-//  //       event: uiModel.model,
-//  //       eventRect: eventContainerRef.current.getBoundingClientRect(),
-//  //     },
-//  //     false // this is flat parameter
-//  //   );
-//  // }
-//
-//  // First some sanity checks.
-//  if (!ev.target || !calendarHandler.calendar) { return; }
-//
-//  // Now find the uiModel.model parameter. This is typed as EventModel|null in the tui code.
-//
-//  // First get the id of the event at hand.
-//  const eventDom = ev.target.closest("[data-event-id]");
-//  if (!eventDom) { return; }
-//  const eventId = Number(eventDom.dataset.eventId);
-//  if (!eventId || Number.isNaN(eventId)) { return; }
-//
-//  // Now get the model from the calendar.
-//  const event = calendarHandler.calendar.getEventModel(eventId, CALENDAR_NAME);
-//  if (!event) { return; }
-//
-//  // Now show the Record Card popup.
-//  await grist.setCursorPos({rowId: event.id});
-//  await grist.commandApi.run('viewAsCard');
-//});
