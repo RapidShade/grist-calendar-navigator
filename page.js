@@ -700,7 +700,9 @@ const customUserAttributes = {
   // If you had any other custom attributes that are NOT part of the doubleClickActions group,
   // they would go here, outside the 'doubleClickActions' object.
 };
-
+console.log('<<<___RAPIDSHADE___>>>');
+console.log(customUserAttributes);
+console.log('***___RAPIDSHADE___***');
   grist.ready({
     requiredAccess: 'full',
     columns: columnsMappingOptions, // This defines the column mapping dropdowns
