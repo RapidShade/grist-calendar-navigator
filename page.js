@@ -722,7 +722,9 @@ async function configureGristSettings() {
     testAttribute: { label: "Test Parameter", type: "text" } 
   };
 
+  console.log('___RAPIDSHADE___');
   console.log(customUserAttributes);
+  console.log('===RAPIDSHADE===');
   
   grist.ready({
     requiredAccess: 'full',
