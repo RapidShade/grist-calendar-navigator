@@ -580,49 +580,48 @@ function getGristOptions() {
   return [
     {
       name: "startDate",
-      title: t("Start Date"),
+      title: "Start Date", // Hardcoded
       optional: false,
       type: "Date,DateTime",
-      description: t("starting point of event"),
+      description: "starting point of event", // Hardcoded
       allowMultiple: false,
       strictType: true
     },
     {
       name: "endDate",
-      title: t("End Date"),
+      title: "End Date", // Hardcoded
       optional: true,
       type: "Date,DateTime",
-      description: t("ending point of event"),
+      description: "ending point of event", // Hardcoded
       allowMultiple: false,
       strictType: true
     },
     {
       name: "isAllDay",
-      title: t("Is All Day"),
+      title: "Is All Day", // Hardcoded
       optional: true,
       type: "Bool",
-      description: t("is event all day long"),
+      description: "is event all day long", // Hardcoded
       strictType: true
     },
     {
       name: "title",
-      title: t("Title"),
+      title: "Title", // Hardcoded
       optional: false,
       type: "Text",
-      description: t("title of event"),
+      description: "title of event", // Hardcoded
       allowMultiple: false
     },
     {
       name: "type",
-      title: t("Type"),
+      title: "Type", // Hardcoded
       optional: true,
       type: "Choice,ChoiceList",
-      description: t("event category and style"),
+      description: "event category and style", // Hardcoded
       allowMultiple: false
     }
   ];
 }
-
 
 function updateUIAfterNavigation() {
   calendarHandler.renderVisibleEvents();
