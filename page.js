@@ -696,8 +696,12 @@ async function configureGristSettings() {
     if (e.tableId && e.mappingsChange) { colTypesFetcher.gotNewMappings(e.tableId); }
   });
 
+async function configureGristSettings() {
+  // ... existing grist.on calls (onRecords, onRecord, onOptions, on 'message') ...
+
+  // ADD THIS BLOCK:
   grist.on("userAttributes", function(userAttrs) {
-    console.log("RapidShade: Received user attributes:", userAttrs); // ADD THIS LINE
+    console.log("RapidShade: Received user attributes:", userAttrs); // KEEP THIS LOG
     const options = userAttrs.doubleClickActions || {};
     window.gristCalendar.doubleClickActionTargetPage1 = options.targetPage1;
     window.gristCalendar.doubleClickActionTargetIdField1 = options.targetIdField1;
@@ -705,7 +709,24 @@ async function configureGristSettings() {
     window.gristCalendar.doubleClickActionTargetIdField2 = options.targetIdField2;
     window.gristCalendar.doubleClickActionTargetPage3 = options.targetPage3;
     window.gristCalendar.doubleClickActionTargetIdField3 = options.targetIdField3;
+
+    // You also need to call the setDoubleClickTargets method of your CalendarHandler
+    // This assumes calendarHandler is already initialized at this point.
+    calendarHandler.setDoubleClickTargets([
+      { page: options.targetPage1, idField: options.targetIdField1 },
+      { page: options.targetPage2, idField: options.targetIdField2 },
+      { page: options.targetPage3, idField: options.targetIdField3 },
+    ].filter(t => t.page)); // Filter out empty targets
   });
+  // END OF BLOCK TO ADD
+
+  // ... rest of configureGristSettings function (enableKeyboardShortcuts, grist.ready) ...
+  grist.enableKeyboardShortcuts?.();
+
+  // bind columns mapping options to the GUI
+  const columnsMappingOptions = getGristOptions();
+  grist.ready({requiredAccess: 'full', columns: columnsMappingOptions, allowSelectBy: true});
+}  
   
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
   grist.enableKeyboardShortcuts?.();
