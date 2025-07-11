@@ -419,6 +419,8 @@ class CalendarHandler {
   }
 
   async _navigateToPageAndRecord(pageName, idFieldName, recordId) {
+    console.log("RapidShade: _navigateToPageAndRecord:", { pageName, idFieldName, recordId });
+
     try {
       // The grist.navigate API can take 'row' for rowId, but not directly a lookup for another field.
       // So we navigate to the page and then use setSelectedRows.
@@ -725,11 +727,14 @@ async function configureGristSettings() {
 
     // You also need to call the setDoubleClickTargets method of your CalendarHandler
     // This assumes calendarHandler is already initialized at this point.
-    calendarHandler.setDoubleClickTargets([
+    const targets = [
       { page: options.targetPage1, idField: options.targetIdField1 },
       { page: options.targetPage2, idField: options.targetIdField2 },
       { page: options.targetPage3, idField: options.targetIdField3 },
-    ].filter(t => t.page)); // Filter out empty targets
+    ].filter(t => t.page);
+    
+    console.log("RapidShade: Setting doubleClickTargets ->", targets);
+    calendarHandler.setDoubleClickTargets(targets);
   });
 
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
