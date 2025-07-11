@@ -1149,7 +1149,7 @@ document.addEventListener('dblclick', async (ev) => {
   }
 });
 */
-
+/*
 document.addEventListener('dblclick', async (ev) => {
   try {
     console.log("Double-click triggered");
@@ -1198,3 +1198,20 @@ document.addEventListener('dblclick', async (ev) => {
   }
 });
 
+*/
+
+document.addEventListener('dblclick', async (ev) => {
+  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
+  const eventDom = ev.target.closest("[data-event-id]");
+  if (!eventDom) return;
+
+  const eventId = Number(eventDom.dataset.eventId);
+  if (Number.isNaN(eventId)) return;
+
+  const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
+  if (!event) return;
+
+  console.log("Double-click event:", event);
+
+  await calendarHandler.handleDoubleClickAction(event.id);
+});
