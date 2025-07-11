@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_LOG21_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+console.log("RAPID1198_LOG22_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
 
 let calendarHandler;
 
@@ -404,25 +404,26 @@ class CalendarHandler {
 ////  await grist.commandApi.run('viewAsCard');
 
 // ✅ Custom fallback redirection to 'Overview ΕΞΟΔΑ'
-const fallbackPageName = "Overview ΕΞΟΔΑ";
-console.warn("No doubleClickTargets set. Redirecting to fallback page:", fallbackPageName);
+const fallbackPage = "Overview ΕΞΟΔΑ";
+console.warn("No doubleClickTargets set. Redirecting via RPC to:", fallbackPage);
 
 try {
-  await grist.navigate({ page: fallbackPageName });
-  console.log("Navigated to fallback page:", fallbackPageName);
+  await grist.rpc.call("navigate", { page: fallbackPage });
+  console.log("RPC navigation sent to Grist for page:", fallbackPage);
 
-  // Small delay to allow widgets to initialize before setting cursor
+  // Delay to allow page and widgets to load before setting cursor
   setTimeout(async () => {
     try {
       console.log("Setting cursor to event ID:", event.id);
       await grist.setCursorPos({ rowId: event.id });
-    } catch (cursorErr) {
-      console.error("Failed to set cursor in fallback redirect:", cursorErr);
+    } catch (e) {
+      console.error("Failed to set cursor after fallback RPC nav:", e);
     }
-  }, 400); // Adjust delay if needed
-} catch (navErr) {
-  console.error("Fallback page navigation failed:", navErr);
-}      
+  }, 500);
+} catch (e) {
+  console.error("Fallback RPC navigate failed:", e);
+}
+    
       
       
       await grist.setCursorPos({rowId: recordId});
@@ -1292,26 +1293,28 @@ document.addEventListener('dblclick', async (ev) => {
 ////      console.warn("RapidShade: Still no targets after waiting. Falling back.");
 ////      await grist.setCursorPos({ rowId: event.id });
 ////      await grist.commandApi.run('viewAsCard');
+
 // ✅ Custom fallback redirection to 'Overview ΕΞΟΔΑ'
-const fallbackPageName = "Overview ΕΞΟΔΑ";
-console.warn("No doubleClickTargets set. Redirecting to fallback page:", fallbackPageName);
+const fallbackPage = "Overview ΕΞΟΔΑ";
+console.warn("No doubleClickTargets set. Redirecting via RPC to:", fallbackPage);
 
 try {
-  await grist.navigate({ page: fallbackPageName });
-  console.log("Navigated to fallback page:", fallbackPageName);
+  await grist.rpc.call("navigate", { page: fallbackPage });
+  console.log("RPC navigation sent to Grist for page:", fallbackPage);
 
-  // Small delay to allow widgets to initialize before setting cursor
+  // Delay to allow page and widgets to load before setting cursor
   setTimeout(async () => {
     try {
       console.log("Setting cursor to event ID:", event.id);
       await grist.setCursorPos({ rowId: event.id });
-    } catch (cursorErr) {
-      console.error("Failed to set cursor in fallback redirect:", cursorErr);
+    } catch (e) {
+      console.error("Failed to set cursor after fallback RPC nav:", e);
     }
-  }, 400); // Adjust delay if needed
-} catch (navErr) {
-  console.error("Fallback page navigation failed:", navErr);
+  }, 500);
+} catch (e) {
+  console.error("Fallback RPC navigate failed:", e);
 }
+
       return;
     }
 
