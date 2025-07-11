@@ -430,7 +430,14 @@ class CalendarHandler {
       return;
     }
 
-    const index = tableData[idFieldName].findIndex(val => val === recordId);
+//    const index = tableData[idFieldName].findIndex(val => val === recordId);
+    const index = tableData[idFieldName].findIndex(val => {
+      if (typeof val === 'object' && val !== null && 'id' in val) {
+        return val.id === recordId;
+      }
+      return val === recordId;
+    });
+    
     if (index === -1) {
       console.warn(`Record ID '${recordId}' not found in field '${idFieldName}'`);
       return;
