@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_LOG11_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+console.log("RAPID1198_LOG20_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
 
 let calendarHandler;
 
@@ -399,9 +399,32 @@ class CalendarHandler {
     if (!targets || targets.length === 0) {
       // No custom targets configured, fall back to default Grist behavior
       // (select row in source table and potentially show Record Card if Grist does that by default)
-      console.log("No custom double-click targets configured. Falling back to default behavior.");
-  await grist.setCursorPos({ rowId: recordId });
-  await grist.commandApi.run('viewAsCard');
+////      console.log("No custom double-click targets configured. Falling back to default behavior.");
+////  await grist.setCursorPos({ rowId: recordId });
+////  await grist.commandApi.run('viewAsCard');
+
+// ✅ Custom fallback redirection to 'Overview ΕΞΟΔΑ'
+const fallbackPageName = "Overview ΕΞΟΔΑ";
+console.warn("No doubleClickTargets set. Redirecting to fallback page:", fallbackPageName);
+
+try {
+  await grist.navigate({ page: fallbackPageName });
+  console.log("Navigated to fallback page:", fallbackPageName);
+
+  // Small delay to allow widgets to initialize before setting cursor
+  setTimeout(async () => {
+    try {
+      console.log("Setting cursor to event ID:", event.id);
+      await grist.setCursorPos({ rowId: event.id });
+    } catch (cursorErr) {
+      console.error("Failed to set cursor in fallback redirect:", cursorErr);
+    }
+  }, 400); // Adjust delay if needed
+} catch (navErr) {
+  console.error("Fallback page navigation failed:", navErr);
+}      
+      
+      
       await grist.setCursorPos({rowId: recordId});
       // The original dblclick listener already calls grist.commandApi.run('viewAsCard'),
       // so we just need to ensure the cursor is set.
