@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_LOG09RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+console.log("RAPID1198_LOG10RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
 
 let calendarHandler;
 
@@ -1248,30 +1248,35 @@ document.addEventListener('dblclick', async (ev) => {
       return;
     }
 
-    // ⏳ If doubleClickTargets are not yet loaded, queue this attempt
-    if (!calendarHandler._doubleClickTargets || calendarHandler._doubleClickTargets.length === 0) {
-      console.log("RapidShade: No doubleClickTargets set. Queuing this double-click for retry...");
-      window.gristCalendar.queuedClickRecordId = event.id;
-      setTimeout(() => {
-        if (calendarHandler._doubleClickTargets?.length > 0) {
-          console.log("RapidShade: Retrying queued double-click now.");
-          calendarHandler.handleDoubleClickAction(event.id);
-        } else {
-          console.warn("RapidShade: Still no targets after delay. Falling back.");
-          grist.setCursorPos({ rowId: event.id });
-          grist.commandApi.run('viewAsCard');
+    // 🔁 Helper: wait up to 2s for targets to be set
+    const waitForTargets = async () => {
+      for (let i = 0; i < 10; i++) {
+        if (calendarHandler._doubleClickTargets?.length) {
+          return true;
         }
-      }, 500);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      return false;
+    };
+
+    // 🧪 Wait and retry if needed
+    const ready = await waitForTargets();
+
+    if (!ready) {
+      console.warn("RapidShade: Still no targets after waiting. Falling back.");
+      await grist.setCursorPos({ rowId: event.id });
+      await grist.commandApi.run('viewAsCard');
       return;
     }
 
-    // 🧭 Use the CalendarHandler logic now that targets are available
+    // 🚀 Ready to redirect
     calendarHandler.handleDoubleClickAction(event.id);
 
   } catch (e) {
     console.error("Error handling double click:", e);
   }
 });
+
 
 
 // DEBUG CHECK: Confirm userAttributes were received
