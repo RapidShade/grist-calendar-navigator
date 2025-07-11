@@ -36,7 +36,7 @@ function getLanguage() {
 function 
 // === EVENT BINDING ===
 document.addEventListener('dblclick', async (ev) => {
-  if (!ev.target || !calendarHandler?.calendar) return;
+  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
 
   const eventDom = ev.target.closest("[data-event-id]");
   if (!eventDom) return;
