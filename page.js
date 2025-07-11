@@ -55,8 +55,6 @@ document.addEventListener('dblclick', async (ev) => {
 
   await calendarHandler.handleDoubleClickAction(event.id);
 });
-  }
-}
 
 function isRecordValid(record) {
   const hasStartDate = record.startDate instanceof Date;
