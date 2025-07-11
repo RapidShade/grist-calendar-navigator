@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_LOG4_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+console.log("RAPID1198_LOG5_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
 
 let calendarHandler;
 
@@ -742,12 +742,18 @@ async function configureGristSettings() {
     ].filter(t => t.page);
     
     console.log("RapidShade: Setting doubleClickTargets ->", targets);
-  // VERIFY calendarHandler is available
-  if (calendarHandler && typeof calendarHandler.setDoubleClickTargets === 'function') {
-    calendarHandler.setDoubleClickTargets(targets);
+  if (window.gristCalendar?.calendarHandler?.setDoubleClickTargets) {
+    window.gristCalendar.calendarHandler.setDoubleClickTargets(targets);
   } else {
-    console.warn("RapidShade: calendarHandler not ready when setting doubleClickTargets");
-    window._deferredDoubleClickTargets = targets;
+    console.warn("RapidShade: calendarHandler not ready. Will retry.");
+    setTimeout(() => {
+      if (window.gristCalendar?.calendarHandler?.setDoubleClickTargets) {
+        console.log("RapidShade: Retrying setDoubleClickTargets:", targets);
+        window.gristCalendar.calendarHandler.setDoubleClickTargets(targets);
+      } else {
+        console.error("RapidShade: calendarHandler still not ready.");
+      }
+    }, 1000); // Retry after 1s
   }
   });
 
