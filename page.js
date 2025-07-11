@@ -722,40 +722,41 @@ async function configureGristSettings() {
     if (e.tableId && e.mappingsChange) { colTypesFetcher.gotNewMappings(e.tableId); }
   });
 
-  // This is the correct place for the grist.on("userAttributes") listener
-  grist.on("userAttributes", function(userAttrs) {
-    console.log("RapidShade: Received user attributes:", userAttrs); // KEEP THIS LOG
-    const options = userAttrs.doubleClickActions || {};
-    window.gristCalendar.doubleClickActionTargetPage1 = options.targetPage1;
-    window.gristCalendar.doubleClickActionTargetIdField1 = options.targetIdField1;
-    window.gristCalendar.doubleClickActionTargetPage2 = options.targetPage2;
-    window.gristCalendar.doubleClickActionTargetIdField2 = options.targetIdField2;
-    window.gristCalendar.doubleClickActionTargetPage3 = options.targetPage3;
-    window.gristCalendar.doubleClickActionTargetIdField3 = options.targetIdField3;
+// Ensure user attributes are applied only when calendarHandler is ready
+function applyDoubleClickTargets(userAttrs) {
+  console.log("RapidShade: Received user attributes:", userAttrs); // DO NOT REMOVE
 
-    // You also need to call the setDoubleClickTargets method of your CalendarHandler
-    // This assumes calendarHandler is already initialized at this point.
-    const targets = [
-      { page: options.targetPage1, idField: options.targetIdField1 },
-      { page: options.targetPage2, idField: options.targetIdField2 },
-      { page: options.targetPage3, idField: options.targetIdField3 },
-    ].filter(t => t.page);
-    
-    console.log("RapidShade: Setting doubleClickTargets ->", targets);
-  if (window.gristCalendar?.calendarHandler?.setDoubleClickTargets) {
-    window.gristCalendar.calendarHandler.setDoubleClickTargets(targets);
-  } else {
-    console.warn("RapidShade: calendarHandler not ready. Will retry.");
-    setTimeout(() => {
-      if (window.gristCalendar?.calendarHandler?.setDoubleClickTargets) {
-        console.log("RapidShade: Retrying setDoubleClickTargets:", targets);
-        window.gristCalendar.calendarHandler.setDoubleClickTargets(targets);
-      } else {
-        console.error("RapidShade: calendarHandler still not ready.");
-      }
-    }, 1000); // Retry after 1s
-  }
-  });
+  const options = userAttrs.doubleClickActions || {};
+  const targets = [
+    { page: options.targetPage1, idField: options.targetIdField1 },
+    { page: options.targetPage2, idField: options.targetIdField2 },
+    { page: options.targetPage3, idField: options.targetIdField3 },
+  ].filter(t => t.page);
+
+  console.log("RapidShade: doubleClickTargets to apply:", targets);
+
+  // Wait until calendarHandler is ready
+  const maxRetries = 5;
+  let attempts = 0;
+
+  const tryApply = () => {
+    if (window.gristCalendar?.calendarHandler?.setDoubleClickTargets) {
+      window.gristCalendar.calendarHandler.setDoubleClickTargets(targets);
+      console.log("RapidShade: Applied doubleClickTargets");
+    } else if (attempts < maxRetries) {
+      attempts++;
+      console.warn(`RapidShade: calendarHandler not ready (attempt ${attempts}). Retrying...`);
+      setTimeout(tryApply, 500);
+    } else {
+      console.error("RapidShade: Failed to apply doubleClickTargets — calendarHandler still not ready");
+    }
+  };
+
+  tryApply();
+}
+
+grist.on("userAttributes", applyDoubleClickTargets);
+
 
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
   grist.enableKeyboardShortcuts?.();
