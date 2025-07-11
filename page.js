@@ -1,3 +1,4 @@
+console.log("RAPID-ORIG-01_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
 // to keep all calendar related logic;
 let calendarHandler;
 
