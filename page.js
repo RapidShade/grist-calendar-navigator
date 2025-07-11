@@ -725,7 +725,7 @@ async function configureGristSettings() {
 
     // You also need to call the setDoubleClickTargets method of your CalendarHandler
     // This assumes calendarHandler is already initialized at this point.
-    window.gristCalendar.calendarHandler.setDoubleClickTargets([
+    calendarHandler.setDoubleClickTargets([
       { page: options.targetPage1, idField: options.targetIdField1 },
       { page: options.targetPage2, idField: options.targetIdField2 },
       { page: options.targetPage3, idField: options.targetIdField3 },
