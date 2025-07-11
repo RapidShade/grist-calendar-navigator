@@ -33,6 +33,20 @@ function getLanguage() {
 }
 
 //registering code to run when a document is ready
+
+// === EVENT BINDING ===
+/*
+document.addEventListener('dblclick', async function(ev) {
+  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
+  const eventDom = ev.target.closest("[data-event-id]");
+  if (!eventDom) return;
+  const eventId = Number(eventDom.dataset.eventId);
+  if (Number.isNaN(eventId)) return;
+  const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
+  if (!event) return;
+  await calendarHandler.handleDoubleClickAction(event.id);
+});
+*/
 function ready(fn) {
   if (document.readyState !== 'loading') {
     fn();
@@ -386,6 +400,8 @@ class CalendarHandler {
       // No custom targets configured, fall back to default Grist behavior
       // (select row in source table and potentially show Record Card if Grist does that by default)
       console.log("No custom double-click targets configured. Falling back to default behavior.");
+  await grist.setCursorPos({ rowId: recordId });
+  await grist.commandApi.run('viewAsCard');
       await grist.setCursorPos({rowId: recordId});
       // The original dblclick listener already calls grist.commandApi.run('viewAsCard'),
       // so we just need to ensure the cursor is set.
@@ -403,25 +419,25 @@ class CalendarHandler {
   }
 
   async _navigateToPageAndRecord(pageName, idFieldName, recordId) {
-    try {
-      // The grist.navigate API can take 'row' for rowId, but not directly a lookup for another field.
-      // So we navigate to the page and then use setSelectedRows.
-      // NOTE: This assumes the target page displays a table that contains the `idFieldName`
-      // and that the `recordId` from the calendar *is* a value in that `idFieldName` column.
-      // If your target table uses a *different* ID for the same logical record,
-      // you would need more advanced logic involving fetching the target table and performing a lookup.
-      await grist.navigate({ page: pageName });
 
-      // After navigating, we need to find the specific row in the new table based on idFieldName.
-      // For simplicity, we will assume `recordId` passed from the calendar *is* the Grist `rowId`
-      // for the target table as well.
-      await grist.setSelectedRows([recordId]);
+    await grist.navigate({ page: pageName });
 
-      console.log(`Mapsd to page "${pageName}" and attempted to select record with ID: ${recordId} using field: ${idFieldName}`);
-    } catch (error) {
-      console.error(`Failed to navigate to page "${pageName}" with record ID ${recordId}:`, error);
-      alert(`Could not navigate to "${pageName}". Make sure the page exists and the ID field is correctly configured.`);
+    const tableName = await grist.docApi.fetchSelectedTable();
+    const tableData = await grist.docApi.fetchTable(tableName);
+
+    if (!tableData || !tableData[idFieldName]) {
+      console.warn(`Field '${idFieldName}' not found in table '${tableName}'`);
+      return;
     }
+
+    const index = tableData[idFieldName].findIndex(val => val === recordId);
+    if (index === -1) {
+      console.warn(`Record ID '${recordId}' not found in field '${idFieldName}'`);
+      return;
+    }
+
+    const rowId = tableData.id[index];
+    await grist.setCursorPos(tableName, { rowId });
   }
 
   async _showPageSelectionDialog(recordId, targets) {
@@ -1085,131 +1101,100 @@ function clean(obj) {
 }
 
 // RapidShade - GEM - DEBUG VERSION
-document.addEventListener('dblclick', async (ev) => {
-  console.log("RapidShade: Double-click event triggered."); // ADD THIS
-  if (!ev.target || !calendarHandler.calendar) {
-    console.log("RapidShade: Double-click: Target or calendar handler missing."); // ADD THIS
-    return;
-  }
-
-  const eventDom = ev.target.closest("[data-event-id]");
-  if (!eventDom) {
-    console.log("RapidShade: Double-click: No event DOM element found."); // ADD THIS
-    return;
-  }
-
-  const eventId = Number(eventDom.dataset.eventId);
-  if (Number.isNaN(eventId)) {
-    console.warn("RapidShade: Double-click event ID is not a number.");
-    return;
-  }
-  console.log("RapidShade: Double-clicked event ID:", eventId); // ADD THIS
-
-  const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
-  if (!event) {
-    console.warn("RapidShade: Double-clicked event not found in calendar model.");
-    return;
-  }
-  console.log("RapidShade: Event object retrieved:", event); // ADD THIS
-
-  const doubleClickActionTargetPage1 = window.gristCalendar.doubleClickActionTargetPage1;
-  const doubleClickActionTargetIdField1 = window.gristCalendar.doubleClickActionTargetIdField1;
-
-  console.log("RapidShade: Target Page 1:", doubleClickActionTargetPage1, "Target ID Field 1:", doubleClickActionTargetIdField1); // ADD THIS
-
-  if (doubleClickActionTargetPage1) {
-    console.log(`RapidShade: Navigating to Target Page 1: ${doubleClickActionTargetPage1} with Event ID: ${event.id}`); // ADD THIS
-    await grist.navigate({
-      pageRef: doubleClickActionTargetPage1,
-      rowRef: doubleClickActionTargetIdField1 ? {
-        tableRef: event.tableId,
-        rowId: event.id
-      } : undefined
-    });
     console.log("RapidShade: grist.navigate() called."); // ADD THIS
-  } else {
-    console.log("RapidShade: No specific double-click action configured for Target Page 1."); // ADD THIS
-    // Default action if no specific target page is configured
-    console.log("RapidShade: Showing Record Card.");
-    await grist.setCursorPos({ rowId: event.id });
-    await grist.commandApi.run('viewAsCard');
-    console.log("RapidShade: Default Record Card action called."); // ADD THIS
-  }
-});
 
-// RapidShade - GEM - page.js (around line 520, replace the existing dblclick listener content)
+// Function to resolve double-click navigation based on widget options
+function handleDoubleClickNavigation(rowId, config) {
+  if (!config) return false;
+
+  const targets = ['Target1', 'Target2', 'Target3'];
+  for (const target of targets) {
+    const pageId = config[`TargetPage${target.slice(-1)}`];
+    const tableId = config[target];
+    const keyField = config[`TargetKey${target.slice(-1)}`];
+
+    if (pageId && tableId && keyField) {
+      grist.setActiveDocPage(pageId);
+      grist.setCursorPos(tableId, { rowId });
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// === DOUBLE-CLICK EVENT BINDING ===
 /*
 document.addEventListener('dblclick', async (ev) => {
-  if (!ev.target || !calendarHandler.calendar) { return; }
+  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
 
-  const eventDom = ev.target.closest("[data-event-id]");
-  if (!eventDom) {
-    // If no event was double-clicked, allow default Grist behavior or do nothing.
-    // The original logic only applied if an event was clicked, we'll follow that.
-    return;
+  const eventEl = ev.target.closest('.fc-event');
+  if (!eventEl) return;
+
+  const gristRecordId = parseInt(eventEl.dataset.gristRecordId);
+  if (!gristRecordId) return;
+
+  try {
+    const selectedTable = await grist.docApi.fetchSelectedTable();
+    const selectedRecord = await grist.docApi.fetchSelectedRecord();
+    const config = await grist.docApi.getWidgetOptions();
+
+    if (!handleDoubleClickNavigation(gristRecordId, config)) {
+      console.log('No custom double-click targets configured. Falling back to default behavior.');
+      grist.setCursorPos(selectedTable, { rowId: gristRecordId });
+      grist.run();
+    }
+  } catch (err) {
+    console.error('Double-click navigation error:', err);
   }
-  const eventId = Number(eventDom.dataset.eventId);
-  if (!eventId || Number.isNaN(eventId)) { return; }
-
-  const event = calendarHandler.calendar.getEventModel(eventId, CALENDAR_NAME);
-  if (!event) { return; }
-
-  // Call our new custom handler
-  await calendarHandler.handleDoubleClickAction(event.id);
 });
 */
-// HACK: show Record Card popup on dblclick.
-//document.addEventListener('dblclick', async (ev) => {
-//  // tui calendar shows a popup on mouseup, and there is no way to customize it.
-//  // So we turn it off (by leaving useDetailPopup to false), and show the Record Card
-//  // popup ourselves.
-//
-//  // Code that I read to make it happen:
-//  //
-//  // https://github.com/nhn/tui.calendar/blob/b53e765e8d896ab7c63d9b9b9515904119a72f46/apps/calendar/src/components/events/timeEvent.tsx#L233
-//  // if (isClick && useDetailPopup && eventContainerRef.current) {
-//  //   showDetailPopup(
-//  //     {
-//  //       event: uiModel.model,
-//  //       eventRect: eventContainerRef.current.getBoundingClientRect(),
-//  //     },
-//  //     false // this is flat parameter
-//  //   );
-//  // }
-//
-//  // First some sanity checks.
-//  if (!ev.target || !calendarHandler.calendar) { return; }
-//
-//  // Now find the uiModel.model parameter. This is typed as EventModel|null in the tui code.
-//
-//  // First get the id of the event at hand.
-//  const eventDom = ev.target.closest("[data-event-id]");
-//  if (!eventDom) { return; }
-//  const eventId = Number(eventDom.dataset.eventId);
-//  if (!eventId || Number.isNaN(eventId)) { return; }
-//
-//  // Now get the model from the calendar.
-//  const event = calendarHandler.calendar.getEventModel(eventId, CALENDAR_NAME);
-//  if (!event) { return; }
-//
-//  // Now show the Record Card popup.
-//  await grist.setCursorPos({rowId: event.id});
-//  await grist.commandApi.run('viewAsCard');
-//});
 
-
-// TEMPORARY HARD-CODED REDIRECTION FOR TESTING
 document.addEventListener('dblclick', async (ev) => {
-  console.log("RapidShade TEMP: Double-click override activated");
+  try {
+    console.log("Double-click triggered");
 
-  // Replace with your actual target page and recordId for testing
-  const testTargetPage = 'p28';
-  const testRecordId = 1;
+    if (!ev.target || !calendarHandler || !calendarHandler.calendar) {
+      console.log("Missing target or calendarHandler");
+      return;
+    }
 
-  if (window.grist && window.grist.setCursorPos) {
-    await window.grist.setCursorPos(testTargetPage, testRecordId);
-    console.log("RapidShade TEMP: Redirected to page", testTargetPage, "with recordId", testRecordId);
-  } else {
-    console.error("RapidShade TEMP: Grist navigation not available");
+    const eventDom = ev.target.closest("[data-event-id]");
+    if (!eventDom) {
+      console.warn("Double-clicked DOM has no [data-event-id]");
+      return;
+    }
+
+    const eventId = Number(eventDom.dataset.eventId);
+    if (Number.isNaN(eventId)) {
+      console.warn("Event ID is not a number");
+      return;
+    }
+
+    const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
+    if (!event) {
+      console.warn("Event object not found in calendar model");
+      return;
+    }
+
+    // Custom navigation logic
+    const targetPage1 = window.gristCalendar.doubleClickActionTargetPage1;
+    const targetIdField1 = window.gristCalendar.doubleClickActionTargetIdField1;
+
+    if (targetPage1) {
+      console.log(`Navigating to custom page ${targetPage1} with event ID ${event.id}`);
+      await grist.navigate({
+        pageRef: targetPage1,
+        rowRef: targetIdField1 ? { tableRef: event.tableId, rowId: event.id } : undefined
+      });
+    } else {
+      // fallback
+      console.log("No custom targets, fallback to Record Card");
+      await grist.setCursorPos({ rowId: event.id });
+      await grist.commandApi.run('viewAsCard');
+    }
+  } catch (e) {
+    console.error("Error handling double click:", e);
   }
 });
+
