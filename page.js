@@ -398,6 +398,8 @@ class CalendarHandler {
       // No custom targets configured, fall back to default Grist behavior
       // (select row in source table and potentially show Record Card if Grist does that by default)
       console.log("No custom double-click targets configured. Falling back to default behavior.");
+  await grist.setCursorPos({ rowId: recordId });
+  await grist.commandApi.run('viewAsCard');
       await grist.setCursorPos({rowId: recordId});
       // The original dblclick listener already calls grist.commandApi.run('viewAsCard'),
       // so we just need to ensure the cursor is set.
