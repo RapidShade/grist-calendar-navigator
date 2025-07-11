@@ -55,12 +55,6 @@ document.addEventListener('dblclick', async (ev) => {
 
   await calendarHandler.handleDoubleClickAction(event.id);
 });
-
-ready(fn) {
-  if (document.readyState !== 'loading') {
-    fn();
-  } else {
-    document.addEventListener('DOMContentLoaded', fn);
   }
 }
 
