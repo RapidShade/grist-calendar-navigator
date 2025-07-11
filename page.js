@@ -1,4 +1,4 @@
-console.log("RAPID-ORIG-07_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
+console.log("RAPID-ORIG-08_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
 // to keep all calendar related logic;
 let calendarHandler;
 
@@ -883,11 +883,9 @@ document.addEventListener('dblclick', async (ev) => {
   if (!event) { return; }
 
   
-// Hard redirect to Overview ΕΞΟΔΑ page and select the record using the hash
-  const url = new URL(window.location.href);
-  url.pathname = '/p/28';
-  url.hash = event.id;
-  window.location.href = url.toString();
+// Redirect using Grist's actual document URL
+  const docUrl = await grist.docUrl();
+  const targetUrl = `${docUrl.replace(/\/$/, '')}/p/28#${event.id}`;
+  window.location.href = targetUrl;
 
 });
-
