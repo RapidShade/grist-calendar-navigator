@@ -1157,51 +1157,23 @@ document.addEventListener('dblclick', async (ev) => {
 });
 */
 
-document.addEventListener('dblclick', async (ev) => {
+document.addEventListener('dblclick', async function(ev) {
+  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
+
+  const eventDom = ev.target.closest("[data-event-id]");
+  if (!eventDom) return;
+
+  const eventId = Number(eventDom.dataset.eventId);
+  if (Number.isNaN(eventId)) return;
+
+  const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
+  if (!event) return;
+
   try {
-    console.log("Double-click triggered");
-
-    if (!ev.target || !calendarHandler || !calendarHandler.calendar) {
-      console.log("Missing target or calendarHandler");
-      return;
-    }
-
-    const eventDom = ev.target.closest("[data-event-id]");
-    if (!eventDom) {
-      console.warn("Double-clicked DOM has no [data-event-id]");
-      return;
-    }
-
-    const eventId = Number(eventDom.dataset.eventId);
-    if (Number.isNaN(eventId)) {
-      console.warn("Event ID is not a number");
-      return;
-    }
-
-    const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
-    if (!event) {
-      console.warn("Event object not found in calendar model");
-      return;
-    }
-
-    // Custom navigation logic
-    const targetPage1 = window.gristCalendar.doubleClickActionTargetPage1;
-    const targetIdField1 = window.gristCalendar.doubleClickActionTargetIdField1;
-
-    if (targetPage1) {
-      console.log(`Navigating to custom page ${targetPage1} with event ID ${event.id}`);
-      await grist.navigate({
-        pageRef: targetPage1,
-        rowRef: targetIdField1 ? { tableRef: event.tableId, rowId: event.id } : undefined
-      });
-    } else {
-      // fallback
-      console.log("No custom targets, fallback to Record Card");
-      await grist.setCursorPos({ rowId: event.id });
-      await grist.commandApi.run('viewAsCard');
-    }
-  } catch (e) {
-    console.error("Error handling double click:", e);
+    await calendarHandler.handleDoubleClickAction(event.id);
+  } catch (err) {
+    console.error("RapidShade: Failed double-click handler:", err);
   }
 });
+
 
