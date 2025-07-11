@@ -40,7 +40,6 @@ function ready(fn) {
   }
 }
 
-function 
 // === EVENT BINDING ===
 document.addEventListener('dblclick', async (ev) => {
   if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
