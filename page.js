@@ -882,9 +882,14 @@ document.addEventListener('dblclick', async (ev) => {
   const event = calendarHandler.calendar.getEventModel(eventId, CALENDAR_NAME);
   if (!event) { return; }
 
-  // Redirect to Overview ΕΞΟΔΑ page and select the record
-  const baseUrl = await grist.docUrl();
-  const targetPage = "/p/28";
-  const targetUrl = `${baseUrl}${targetPage}#${event.id}`;
-  window.location.href = targetUrl;
+  
+// Redirect to Overview ΕΞΟΔΑ page and select the record in the master widget
+  window.parent.postMessage({
+    type: 'GristNavigate',
+    page: 28,
+    table: 'EVENTS',
+    rowId: event.id
+  }, '*');
+
 });
+
