@@ -1,6 +1,4 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_LOG22_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
-
 let calendarHandler;
 
 const CALENDAR_NAME = 'standardCalendar';
@@ -33,20 +31,6 @@ function getLanguage() {
 }
 
 //registering code to run when a document is ready
-
-// === EVENT BINDING ===
-/*
-document.addEventListener('dblclick', async function(ev) {
-  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
-  const eventDom = ev.target.closest("[data-event-id]");
-  if (!eventDom) return;
-  const eventId = Number(eventDom.dataset.eventId);
-  if (Number.isNaN(eventId)) return;
-  const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
-  if (!event) return;
-  await calendarHandler.handleDoubleClickAction(event.id);
-});
-*/
 function ready(fn) {
   if (document.readyState !== 'loading') {
     fn();
@@ -391,180 +375,12 @@ class CalendarHandler {
     }
   }
 
-// page.js (inside CalendarHandler class, e.g., after refreshSelectedRecord, around line 269)
-
-  async handleDoubleClickAction(recordId) {
-    const targets = this._doubleClickTargets;
-
-    if (!targets || targets.length === 0) {
-      // No custom targets configured, fall back to default Grist behavior
-      // (select row in source table and potentially show Record Card if Grist does that by default)
-////      console.log("No custom double-click targets configured. Falling back to default behavior.");
-////  await grist.setCursorPos({ rowId: recordId });
-////  await grist.commandApi.run('viewAsCard');
-
-// ✅ Custom fallback redirection to 'Overview ΕΞΟΔΑ'
-const fallbackPage = "Overview ΕΞΟΔΑ";
-console.warn("No doubleClickTargets set. Redirecting via RPC to:", fallbackPage);
-
-try {
-  await grist.rpc.call("navigate", { page: fallbackPage });
-  console.log("RPC navigation sent to Grist for page:", fallbackPage);
-
-  // Delay to allow page and widgets to load before setting cursor
-  setTimeout(async () => {
-    try {
-      console.log("Setting cursor to event ID:", event.id);
-      await grist.setCursorPos({ rowId: event.id });
-    } catch (e) {
-      console.error("Failed to set cursor after fallback RPC nav:", e);
-    }
-  }, 500);
-} catch (e) {
-  console.error("Fallback RPC navigate failed:", e);
-}
-    
-      
-      
-      await grist.setCursorPos({rowId: recordId});
-      // The original dblclick listener already calls grist.commandApi.run('viewAsCard'),
-      // so we just need to ensure the cursor is set.
-      return;
-    }
-
-    if (targets.length === 1) {
-      // Only one target page, navigate directly
-      const target = targets[0];
-      await this._navigateToPageAndRecord(target.page, target.idField, recordId);
-    } else {
-      // Multiple target pages, show selection dialog
-      await this._showPageSelectionDialog(recordId, targets);
-    }
-  }
-
-  async _navigateToPageAndRecord(pageName, idFieldName, recordId) {
-    console.log("RapidShade: _navigateToPageAndRecord:", { pageName, idFieldName, recordId });
-
-    try {
-      // The grist.navigate API can take 'row' for rowId, but not directly a lookup for another field.
-      // So we navigate to the page and then use setSelectedRows.
-      // NOTE: This assumes the target page displays a table that contains the `idFieldName`
-      // and that the `recordId` from the calendar *is* a value in that `idFieldName` column.
-      // If your target table uses a *different* ID for the same logical record,
-      // you would need more advanced logic involving fetching the target table and performing a lookup.
-      await grist.navigate({ page: pageName });
-
-      // After navigating, we need to find the specific row in the new table based on idFieldName.
-      // For simplicity, we will assume `recordId` passed from the calendar *is* the Grist `rowId`
-      // for the target table as well.
-      await grist.setSelectedRows([recordId]);
-
-      console.log(`Mapsd to page "${pageName}" and attempted to select record with ID: ${recordId} using field: ${idFieldName}`);
-    } catch (error) {
-      console.error(`Failed to navigate to page "${pageName}" with record ID ${recordId}:`, error);
-      alert(`Could not navigate to "${pageName}". Make sure the page exists and the ID field is correctly configured.`);
-    }
-  }
-
-  async _showPageSelectionDialog(recordId, targets) {
-    // Check if a modal is already open
-    let modal = document.getElementById('grist-calendar-page-selection-modal');
-    if (modal) {
-        // If it exists, clear its content for a fresh display
-        modal.innerHTML = '';
-    } else {
-        // Create the modal element if it doesn't exist
-        modal = document.createElement('div');
-        modal.id = 'grist-calendar-page-selection-modal';
-        modal.style.position = 'fixed';
-        modal.style.top = '50%';
-        modal.style.left = '50%';
-        modal.style.transform = 'translate(-50%, -50%)';
-        modal.style.backgroundColor = 'var(--grist-theme-page-panels-main-panel-bg)';
-        modal.style.padding = '20px';
-        modal.style.border = '1px solid var(--grist-theme-border)';
-        modal.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-        modal.style.zIndex = '9999'; // Ensure it's on top
-        modal.style.borderRadius = '5px';
-        modal.style.color = 'var(--grist-theme-text)';
-        document.body.appendChild(modal);
-    }
-
-    // Modal content
-    const header = document.createElement('h3');
-    header.style.marginBottom = '15px';
-    header.textContent = t('Select a page to view the record:');
-    modal.appendChild(header);
-
-    targets.forEach((target, index) => {
-      const button = document.createElement('button');
-      button.dataset.pageIndex = index;
-      button.textContent = target.page;
-      button.style.display = 'block'; // Make buttons stack vertically
-      button.style.width = '100%';
-      button.style.padding = '10px';
-      button.style.marginBottom = '10px';
-      button.style.backgroundColor = 'var(--grist-theme-top-bar-button-primary-bg)';
-      button.style.color = 'var(--grist-theme-top-bar-button-primary-fg)';
-      button.style.border = 'none';
-      button.style.borderRadius = '3px';
-      button.style.cursor = 'pointer';
-      button.style.fontSize = '16px';
-      button.style.fontWeight = 'bold';
-      button.onmouseover = () => button.style.opacity = '0.9';
-      button.onmouseout = () => button.style.opacity = '1';
-      modal.appendChild(button);
-    });
-
-    const cancelButton = document.createElement('button');
-    cancelButton.id = 'cancelSelection';
-    cancelButton.textContent = t('Cancel');
-    cancelButton.style.display = 'block';
-    cancelButton.style.width = '100%';
-    cancelButton.style.padding = '10px';
-    cancelButton.style.marginTop = '15px';
-    cancelButton.style.backgroundColor = 'var(--grist-theme-disabled-button-bg)';
-    cancelButton.style.color = 'var(--grist-theme-disabled-button-fg)';
-    cancelButton.style.border = 'none';
-    cancelButton.style.borderRadius = '3px';
-    cancelButton.style.cursor = 'pointer';
-    cancelButton.onmouseover = () => cancelButton.style.opacity = '0.9';
-    cancelButton.onmouseout = () => cancelButton.style.opacity = '1';
-    modal.appendChild(cancelButton);
-
-    return new Promise((resolve) => {
-      const handleClick = async (event) => {
-        const index = event.target.dataset.pageIndex;
-        if (index !== undefined) {
-          const target = targets[parseInt(index)];
-          await this._navigateToPageAndRecord(target.page, target.idField, recordId);
-          document.body.removeChild(modal);
-          resolve();
-        } else if (event.target.id === 'cancelSelection') {
-          document.body.removeChild(modal);
-          resolve();
-        }
-        modal.removeEventListener('click', handleClick); // Clean up listener
-      };
-      modal.addEventListener('click', handleClick);
-    });
-  }  
-
   getEvents() {
     return this._allEvents;
   }
 
   setEvents(events) {
     this._allEvents = events;
-  }
-
-// RapidShade - GEM - page.js (inside CalendarHandler class, e.g., after setEvents, around line 273)
-
-  _doubleClickTargets = []; // Initialize an internal property to store the targets
-
-  setDoubleClickTargets(targets) {
-    this._doubleClickTargets = targets;
-    console.log("Double-click targets updated:", this._doubleClickTargets);
   }
 
   /**
@@ -605,67 +421,14 @@ try {
   }
 }
 
-/*
 // when a document is ready, register the calendar and subscribe to grist events
 ready(async () => {
   await translatePage();
   calendarHandler = new CalendarHandler();
   window.gristCalendar.calendarHandler = calendarHandler;
-
-  // Apply deferred targets if they were set early
-  if (window._deferredDoubleClickTargets) {
-    console.log("RapidShade: Applying deferred doubleClickTargets:", window._deferredDoubleClickTargets);
-    calendarHandler.setDoubleClickTargets(window._deferredDoubleClickTargets);
-    delete window._deferredDoubleClickTargets;
-  }
-  
   await configureGristSettings();
 
 });
-*/
-
-ready(async () => {
-  await translatePage();
-  calendarHandler = new CalendarHandler();
-  window.gristCalendar.calendarHandler = calendarHandler;
-  await configureGristSettings();
-
-  grist.on("userAttributes", (userAttrs) => {
-    console.log("RapidShade: Received user attributes:", userAttrs); // KEEP THIS LOG
-    const options = userAttrs.doubleClickActions || {};
-    const targets = [
-      { page: options.targetPage1, idField: options.targetIdField1 },
-      { page: options.targetPage2, idField: options.targetIdField2 },
-      { page: options.targetPage3, idField: options.targetIdField3 },
-    ].filter(t => t.page);
-
-    console.log("RapidShade: doubleClickTargets to apply:", targets);
-
-    // NOW calendarHandler is guaranteed to be ready
-    calendarHandler.setDoubleClickTargets(targets);
-
-    console.log("RapidShade: doubleClickTargets to apply:", calendarHandler._doubleClickTargets);
-
-// If any click was queued before targets arrived, retry
-if (window.gristCalendar.queuedClickRecordId && calendarHandler._doubleClickTargets?.length > 0) {
-  console.log("RapidShade: Processing queued click for record", window.gristCalendar.queuedClickRecordId);
-  calendarHandler.handleDoubleClickAction(window.gristCalendar.queuedClickRecordId);
-  window.gristCalendar.queuedClickRecordId = null;
-}
-
-  });
-
-  // Enable shortcuts and signal ready
-  grist.enableKeyboardShortcuts?.();
-  const columnsMappingOptions = getGristOptions();
-  grist.ready({
-    requiredAccess: 'full',
-    columns: columnsMappingOptions,
-    allowSelectBy: true,
-  });
-});
-
-
 
 // Data for column mapping fields in Widget GUI
 function getGristOptions() {
@@ -711,60 +474,7 @@ function getGristOptions() {
       type: "Choice,ChoiceList",
       description: t("event category and style"),
       allowMultiple: false
-    },
-// RapidShade - GEM - page.js (around line 328, after the 'type' object)
-
-    // New properties for Double-Click Target 1
-    {
-      name: "targetPage1",
-      title: t("Target Page 1"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the first page to navigate to on double-click."),
-      allowMultiple: false
-    },
-    {
-      name: "targetIdField1",
-      title: t("ID Field 1"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the ID column on Target Page 1 for record lookup."),
-      allowMultiple: false
-    },
-    // New properties for Double-Click Target 2
-    {
-      name: "targetPage2",
-      title: t("Target Page 2"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the second page to navigate to on double-click."),
-      allowMultiple: false
-    },
-    {
-      name: "targetIdField2",
-      title: t("ID Field 2"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the ID column on Target Page 2 for record lookup."),
-      allowMultiple: false
-    },
-    // New properties for Double-Click Target 3
-    {
-      name: "targetPage3",
-      title: t("Target Page 3"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the third page to navigate to on double-click."),
-      allowMultiple: false
-    },
-    {
-      name: "targetIdField3",
-      title: t("ID Field 3"),
-      optional: true,
-      type: "Text",
-      description: t("Name of the ID column on Target Page 3 for record lookup."),
-      allowMultiple: false
-    }    
+    }
   ];
 }
 
@@ -791,45 +501,6 @@ async function configureGristSettings() {
     if (e.tableId && e.mappingsChange) { colTypesFetcher.gotNewMappings(e.tableId); }
   });
 
-// Ensure user attributes are applied only when calendarHandler is ready
-function applyDoubleClickTargets(userAttrs) {
-  console.log("RapidShade: Received user attributes:", userAttrs); // DO NOT REMOVE
-  console.log("RAPID1198_LOG11_RapidShade: userAttributes received:", userAttrs); // ← ADD THIS
-
-  const options = userAttrs.doubleClickActions || {};
-    console.log("RAPID1198_LOG12_RapidShade: doubleClickActions resolved:", options); // ← ADD THIS
-
-  const targets = [
-    { page: options.targetPage1, idField: options.targetIdField1 },
-    { page: options.targetPage2, idField: options.targetIdField2 },
-    { page: options.targetPage3, idField: options.targetIdField3 },
-  ].filter(t => t.page);
-
-  console.log("RapidShade: doubleClickTargets to apply:", targets);
-
-  // Wait until calendarHandler is ready
-  const maxRetries = 5;
-  let attempts = 0;
-
-  const tryApply = () => {
-    if (window.gristCalendar?.calendarHandler?.setDoubleClickTargets) {
-      window.gristCalendar.calendarHandler.setDoubleClickTargets(targets);
-      console.log("RapidShade: Applied doubleClickTargets");
-    } else if (attempts < maxRetries) {
-      attempts++;
-      console.warn(`RapidShade: calendarHandler not ready (attempt ${attempts}). Retrying...`);
-      setTimeout(tryApply, 500);
-    } else {
-      console.error("RapidShade: Failed to apply doubleClickTargets — calendarHandler still not ready");
-    }
-  };
-
-  tryApply();
-}
-
-grist.on("userAttributes", applyDoubleClickTargets);
-
-
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
   grist.enableKeyboardShortcuts?.();
 
@@ -851,39 +522,17 @@ async function translatePage() {
     // overrideMimeType sets request.overrideMimeType("application/json")
     overrideMimeType: false,
   }
-
-await i18next.use(i18nextHttpBackend).init({
-  lng: getLanguage(),
-  fallbackLng: 'en', // Recommended: Fallback language if current language translations are missing
-  debug: false,
-  saveMissing: false, // Correctly disables saving missing translations
-  returnNull: false,
-  ns: ['translation'], // Recommended: Define your namespace
-  defaultNS: 'translation', // Recommended: Set default namespace
-  backend: backendOptions, // Assuming backendOptions is defined correctly elsewhere
-  interpolation: {
-    escapeValue: false, // Useful if you're not using a framework that escapes by default
-  }
-}, function (err, t) {
-  if (err) {
-    console.error("RapidShade: i18next initialization error:", err);
-  }
-  document.body.querySelectorAll('[data-i18n]').forEach(function (elem) {
-    elem.textContent = t(elem.dataset.i18n);
+  await i18next.use(i18nextHttpBackend).init({
+    lng: getLanguage(),
+    debug: false,
+    saveMissing: true,
+    returnNull: false,
+    backend: backendOptions,
+  }, function (err, t) {
+    document.body.querySelectorAll('[data-i18n]').forEach(function (elem) {
+      elem.textContent = t(elem.dataset.i18n);
+    });
   });
-});
-  
-//  await i18next.use(i18nextHttpBackend).init({
-//    lng: getLanguage(),
-//    debug: false,
-//    saveMissing: false,
-//    returnNull: false,
-//    backend: backendOptions,
-//  }, function (err, t) {
-//    document.body.querySelectorAll('[data-i18n]').forEach(function (elem) {
-//      elem.textContent = t(elem.dataset.i18n);
-//    });
-//  });
 }
 
 // When a user selects a record in the table, we want to select it on the calendar.
@@ -1198,143 +847,43 @@ function clean(obj) {
   return Object.fromEntries(Object.entries(obj).filter(([k, v]) => v !== undefined));
 }
 
-// RapidShade - GEM - DEBUG VERSION
-    console.log("RapidShade: grist.navigate() called."); // ADD THIS
-
-// Function to resolve double-click navigation based on widget options
-function handleDoubleClickNavigation(rowId, config) {
-  if (!config) return false;
-
-  const targets = ['Target1', 'Target2', 'Target3'];
-  for (const target of targets) {
-    const pageId = config[`TargetPage${target.slice(-1)}`];
-    const tableId = config[target];
-    const keyField = config[`TargetKey${target.slice(-1)}`];
-
-    if (pageId && tableId && keyField) {
-      grist.setActiveDocPage(pageId);
-      grist.setCursorPos(tableId, { rowId });
-      return true;
-    }
-  }
-
-  return false;
-}
-
-// === DOUBLE-CLICK EVENT BINDING ===
-/*
+// HACK: show Record Card popup on dblclick.
 document.addEventListener('dblclick', async (ev) => {
-  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
+  // tui calendar shows a popup on mouseup, and there is no way to customize it.
+  // So we turn it off (by leaving useDetailPopup to false), and show the Record Card
+  // popup ourselves.
 
-  const eventEl = ev.target.closest('.fc-event');
-  if (!eventEl) return;
+  // Code that I read to make it happen:
+  //
+  // https://github.com/nhn/tui.calendar/blob/b53e765e8d896ab7c63d9b9b9515904119a72f46/apps/calendar/src/components/events/timeEvent.tsx#L233
+  // if (isClick && useDetailPopup && eventContainerRef.current) {
+  //   showDetailPopup(
+  //     {
+  //       event: uiModel.model,
+  //       eventRect: eventContainerRef.current.getBoundingClientRect(),
+  //     },
+  //     false // this is flat parameter
+  //   );
+  // }
 
-  const gristRecordId = parseInt(eventEl.dataset.gristRecordId);
-  if (!gristRecordId) return;
+  // First some sanity checks.
+  if (!ev.target || !calendarHandler.calendar) { return; }
 
-  try {
-    const selectedTable = await grist.docApi.fetchSelectedTable();
-    const selectedRecord = await grist.docApi.fetchSelectedRecord();
-    const config = await grist.docApi.getWidgetOptions();
+  // Now find the uiModel.model parameter. This is typed as EventModel|null in the tui code.
 
-    if (!handleDoubleClickNavigation(gristRecordId, config)) {
-      console.log('No custom double-click targets configured. Falling back to default behavior.');
-      grist.setCursorPos(selectedTable, { rowId: gristRecordId });
-      grist.run();
-    }
-  } catch (err) {
-    console.error('Double-click navigation error:', err);
-  }
+  // First get the id of the event at hand.
+  const eventDom = ev.target.closest("[data-event-id]");
+  if (!eventDom) { return; }
+  const eventId = Number(eventDom.dataset.eventId);
+  if (!eventId || Number.isNaN(eventId)) { return; }
+
+  // Now get the model from the calendar.
+  const event = calendarHandler.calendar.getEventModel(eventId, CALENDAR_NAME);
+  if (!event) { return; }
+
+  // Redirect to Overview ΕΞΟΔΑ page and select the record
+  const baseUrl = window.location.origin;
+  const targetPage = "/p/28";
+  const targetUrl = `${baseUrl}${targetPage}#${event.id}`;
+  window.location.href = targetUrl;
 });
-*/
-
-document.addEventListener('dblclick', async (ev) => {
-  try {
-    console.log("Double-click triggered");
-
-    if (!ev.target || !calendarHandler || !calendarHandler.calendar) {
-      console.log("Missing target or calendarHandler");
-      return;
-    }
-
-    const eventDom = ev.target.closest("[data-event-id]");
-    if (!eventDom) {
-      console.warn("Double-clicked DOM has no [data-event-id]");
-      return;
-    }
-
-    const eventId = Number(eventDom.dataset.eventId);
-    if (Number.isNaN(eventId)) {
-      console.warn("Event ID is not a number");
-      return;
-    }
-
-    const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
-    if (!event) {
-      console.warn("Event object not found in calendar model");
-      return;
-    }
-
-    // 🔁 Helper: wait up to 2s for targets to be set
-    const waitForTargets = async () => {
-      for (let i = 0; i < 10; i++) {
-        if (calendarHandler._doubleClickTargets?.length) {
-          return true;
-        }
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      return false;
-    };
-
-    // 🧪 Wait and retry if needed
-    const ready = await waitForTargets();
-
-    if (!ready) {
-////      console.warn("RapidShade: Still no targets after waiting. Falling back.");
-////      await grist.setCursorPos({ rowId: event.id });
-////      await grist.commandApi.run('viewAsCard');
-
-// ✅ Custom fallback redirection to 'Overview ΕΞΟΔΑ'
-const fallbackPage = "Overview ΕΞΟΔΑ";
-console.warn("No doubleClickTargets set. Redirecting via RPC to:", fallbackPage);
-
-try {
-  await grist.rpc.call("navigate", { page: fallbackPage });
-  console.log("RPC navigation sent to Grist for page:", fallbackPage);
-
-  // Delay to allow page and widgets to load before setting cursor
-  setTimeout(async () => {
-    try {
-      console.log("Setting cursor to event ID:", event.id);
-      await grist.setCursorPos({ rowId: event.id });
-    } catch (e) {
-      console.error("Failed to set cursor after fallback RPC nav:", e);
-    }
-  }, 500);
-} catch (e) {
-  console.error("Fallback RPC navigate failed:", e);
-}
-
-      return;
-    }
-
-    // 🚀 Ready to redirect
-    calendarHandler.handleDoubleClickAction(event.id);
-
-  } catch (e) {
-    console.error("Error handling double click:", e);
-  }
-});
-
-
-
-// DEBUG CHECK: Confirm userAttributes were received
-setTimeout(() => {
-  if (!window.gristCalendar?.calendarHandler?._doubleClickTargets?.length) {
-    console.warn("RapidShade: No doubleClickTargets set. Check userAttributes or apply timing.");
-  } else {
-    console.log("RapidShade: Final doubleClickTargets:", window.gristCalendar.calendarHandler._doubleClickTargets);
-  }
-}, 3000);
-
-
