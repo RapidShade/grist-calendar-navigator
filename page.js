@@ -32,7 +32,14 @@ function getLanguage() {
   }
 }
 
-//registering code to run when a document is ready
+function ready(fn) {
+  if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
 function 
 // === EVENT BINDING ===
 document.addEventListener('dblclick', async (ev) => {
@@ -245,7 +252,7 @@ class CalendarHandler {
       this.calendar.clearGridSelections();
 
       // If this click results in the form popup, focus the title field in it.
-      setTimeout(() => container.querySelector('input[name=title]')?.focus(), 0);
+      setTimeout(() => container.querySelector('input[name=title]').focus(), 0);
     });
 
     // Creation happens via the event-edit form.
@@ -282,8 +289,8 @@ class CalendarHandler {
       } else if (ev.key === 'Enter') {
         // On a view popup, click "Edit"; on the edit popup, click "Save". Just try both to keep
         // it simple, since only one button will be present in practice.
-        container.querySelector('button.toastui-calendar-edit-button')?.click();
-        container.querySelector('button.toastui-calendar-popup-confirm')?.click();
+        container.querySelector('button.toastui-calendar-edit-button').click();
+        container.querySelector('button.toastui-calendar-popup-confirm').click();
       }
     });
 
@@ -347,8 +354,8 @@ class CalendarHandler {
     const partToColor = shouldPaintBackground ? 'backgroundColor' : 'borderColor';
     this.calendar.updateEvent(eventId, CALENDAR_NAME, {
       ...{
-        borderColor: event.raw?.['backgroundColor'] ?? this._mainColor,
-        backgroundColor: event.raw?.['backgroundColor'] ?? this._mainColor,
+        borderColor: event.raw.['backgroundColor'] ?? this._mainColor,
+        backgroundColor: event.raw.['backgroundColor'] ?? this._mainColor,
       },
       [partToColor]: this._selectedColor
     });
@@ -359,8 +366,8 @@ class CalendarHandler {
     if (!event) { return; }
     // We will highlight it by changing the background color. Otherwise we will change the border color.
     this.calendar.updateEvent(eventId, CALENDAR_NAME, {
-      borderColor: event.raw?.['backgroundColor'] ?? this._mainColor,
-      backgroundColor: event.raw?.['backgroundColor'] ?? this._mainColor,
+      borderColor: event.raw.['backgroundColor'] ?? this._mainColor,
+      backgroundColor: event.raw.['backgroundColor'] ?? this._mainColor,
     });
   }
 
@@ -734,7 +741,7 @@ async function configureGristSettings() {
   });
 
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
-  grist.enableKeyboardShortcuts?.();
+  grist.enableKeyboardShortcuts.();
 
   // bind columns mapping options to the GUI
   const columnsMappingOptions = getGristOptions();
@@ -810,7 +817,7 @@ async function calendarViewChanges(radiobutton) {
 // this is the place where we can react to this change and update calendar view, or when new session is started
 // (so we are loading previous settings)
 function onGristSettingsChanged(options, settings) {
-  const view = options?.calendarViewPerspective ?? 'week';
+  const view = options.calendarViewPerspective ?? 'week';
   changeCalendarView(view);
   colTypesFetcher.setAccessLevel(settings.accessLevel);
 };
@@ -969,13 +976,13 @@ function buildCalendarEventObject(record, colTypes, colOptions) {
   // Apply colors from the type column.
   const selected = (Array.isArray(record.type) ? record.type[0] : record.type) ?? '';
   const raw = clean({
-    backgroundColor: type?.choiceOptions?.[selected]?.fillColor,
-    color: type?.choiceOptions?.[selected]?.textColor,
+    backgroundColor: type.choiceOptions.[selected].fillColor,
+    color: type.choiceOptions.[selected].textColor,
   });
-  const fontWeight = type?.choiceOptions?.[selected]?.fontBold ? '800' : 'normal';
-  const fontStyle = type?.choiceOptions?.[selected]?.fontItalic ? 'italic' : 'normal';
-  let textDecoration = type?.choiceOptions?.[selected]?.fontUnderline ? 'underline' : 'none';
-  if (type?.choiceOptions?.[selected]?.fontStrikethrough) {
+  const fontWeight = type.choiceOptions.[selected].fontBold ? '800' : 'normal';
+  const fontStyle = type.choiceOptions.[selected].fontItalic ? 'italic' : 'normal';
+  let textDecoration = type.choiceOptions.[selected].fontUnderline ? 'underline' : 'none';
+  if (type.choiceOptions.[selected].fontStrikethrough) {
     textDecoration = textDecoration === 'underline' ? 'line-through underline' : 'line-through';
   }
   return {
@@ -1079,11 +1086,11 @@ class ColTypesFetcher {
   }
 
   async getColTypes() {
-    return this._colTypesPromise.then(types => types.map(t => t?.type));
+    return this._colTypesPromise.then(types => types.map(t => t.type));
   }
 
   async getColOptions() {
-    return this._colTypesPromise.then(types => types.map(t => safeParse(t?.widgetOptions)));
+    return this._colTypesPromise.then(types => types.map(t => safeParse(t.widgetOptions)));
   }
 }
 
