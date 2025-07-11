@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_LOG20_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+console.log("RAPID1198_LOG21_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
 
 let calendarHandler;
 
@@ -1289,9 +1289,29 @@ document.addEventListener('dblclick', async (ev) => {
     const ready = await waitForTargets();
 
     if (!ready) {
-      console.warn("RapidShade: Still no targets after waiting. Falling back.");
+////      console.warn("RapidShade: Still no targets after waiting. Falling back.");
+////      await grist.setCursorPos({ rowId: event.id });
+////      await grist.commandApi.run('viewAsCard');
+// ✅ Custom fallback redirection to 'Overview ΕΞΟΔΑ'
+const fallbackPageName = "Overview ΕΞΟΔΑ";
+console.warn("No doubleClickTargets set. Redirecting to fallback page:", fallbackPageName);
+
+try {
+  await grist.navigate({ page: fallbackPageName });
+  console.log("Navigated to fallback page:", fallbackPageName);
+
+  // Small delay to allow widgets to initialize before setting cursor
+  setTimeout(async () => {
+    try {
+      console.log("Setting cursor to event ID:", event.id);
       await grist.setCursorPos({ rowId: event.id });
-      await grist.commandApi.run('viewAsCard');
+    } catch (cursorErr) {
+      console.error("Failed to set cursor in fallback redirect:", cursorErr);
+    }
+  }, 400); // Adjust delay if needed
+} catch (navErr) {
+  console.error("Fallback page navigation failed:", navErr);
+}
       return;
     }
 
