@@ -1098,19 +1098,3 @@ function clean(obj) {
 
 // RapidShade - GEM - DEBUG VERSION
     console.log("RapidShade: grist.navigate() called."); // ADD THIS
-  } else {
-    console.log("RapidShade: No specific double-click action configured for Target Page 1."); // ADD THIS
-    // Default action if no specific target page is configured
-    console.log("RapidShade: Showing Record Card.");
-    await grist.setCursorPos({ rowId: event.id });
-    await grist.commandApi.run('viewAsCard');
-    console.log("RapidShade: Default Record Card action called."); // ADD THIS
-  }
-});
-
-// RapidShade - GEM - page.js (around line 520, replace the existing dblclick listener content)
-/*
-*/
-// HACK: show Record Card popup on dblclick.
-//  await grist.commandApi.run('viewAsCard');
-//});
