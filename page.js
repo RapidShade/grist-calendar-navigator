@@ -33,6 +33,18 @@ function getLanguage() {
 }
 
 //registering code to run when a document is ready
+
+// === EVENT BINDING ===
+document.addEventListener('dblclick', async function(ev) {
+  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
+  const eventDom = ev.target.closest("[data-event-id]");
+  if (!eventDom) return;
+  const eventId = Number(eventDom.dataset.eventId);
+  if (Number.isNaN(eventId)) return;
+  const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
+  if (!event) return;
+  await calendarHandler.handleDoubleClickAction(event.id);
+});
 function ready(fn) {
   if (document.readyState !== 'loading') {
     fn();
@@ -721,19 +733,6 @@ async function configureGristSettings() {
 
   // bind columns mapping options to the GUI
   const columnsMappingOptions = getGristOptions();
-
-// === EVENT BINDING ===
-document.addEventListener('dblclick', async function(ev) {
-  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
-  const eventDom = ev.target.closest("[data-event-id]");
-  if (!eventDom) return;
-  const eventId = Number(eventDom.dataset.eventId);
-  if (Number.isNaN(eventId)) return;
-  const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
-  if (!event) return;
-  await calendarHandler.handleDoubleClickAction(event.id);
-});
-
   grist.ready({requiredAccess: 'full', columns: columnsMappingOptions, allowSelectBy: true});
 }
 
@@ -1106,6 +1105,8 @@ function clean(obj) {
     await grist.setCursorPos({ rowId: event.id });
     await grist.commandApi.run('viewAsCard');
     console.log("RapidShade: Default Record Card action called."); // ADD THIS
+  }
+});
 
 // RapidShade - GEM - page.js (around line 520, replace the existing dblclick listener content)
 /*
