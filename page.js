@@ -586,6 +586,14 @@ ready(async () => {
   await translatePage();
   calendarHandler = new CalendarHandler();
   window.gristCalendar.calendarHandler = calendarHandler;
+
+  // Apply deferred targets if they were set early
+  if (window._deferredDoubleClickTargets) {
+    console.log("RapidShade: Applying deferred doubleClickTargets:", window._deferredDoubleClickTargets);
+    calendarHandler.setDoubleClickTargets(window._deferredDoubleClickTargets);
+    delete window._deferredDoubleClickTargets;
+  }
+  
   await configureGristSettings();
 
 });
@@ -734,7 +742,13 @@ async function configureGristSettings() {
     ].filter(t => t.page);
     
     console.log("RapidShade: Setting doubleClickTargets ->", targets);
+  // VERIFY calendarHandler is available
+  if (calendarHandler && typeof calendarHandler.setDoubleClickTargets === 'function') {
     calendarHandler.setDoubleClickTargets(targets);
+  } else {
+    console.warn("RapidShade: calendarHandler not ready when setting doubleClickTargets");
+    window._deferredDoubleClickTargets = targets;
+  }
   });
 
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
