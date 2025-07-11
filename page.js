@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_LOG07_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+console.log("RAPID1198_LOG08_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
 
 let calendarHandler;
 
@@ -581,6 +581,7 @@ class CalendarHandler {
   }
 }
 
+/*
 // when a document is ready, register the calendar and subscribe to grist events
 ready(async () => {
   await translatePage();
@@ -597,6 +598,40 @@ ready(async () => {
   await configureGristSettings();
 
 });
+*/
+
+ready(async () => {
+  await translatePage();
+  calendarHandler = new CalendarHandler();
+  window.gristCalendar.calendarHandler = calendarHandler;
+  await configureGristSettings();
+
+  grist.on("userAttributes", (userAttrs) => {
+    console.log("RapidShade: Received user attributes:", userAttrs); // KEEP THIS LOG
+    const options = userAttrs.doubleClickActions || {};
+    const targets = [
+      { page: options.targetPage1, idField: options.targetIdField1 },
+      { page: options.targetPage2, idField: options.targetIdField2 },
+      { page: options.targetPage3, idField: options.targetIdField3 },
+    ].filter(t => t.page);
+
+    console.log("RapidShade: doubleClickTargets to apply:", targets);
+
+    // NOW calendarHandler is guaranteed to be ready
+    calendarHandler.setDoubleClickTargets(targets);
+  });
+
+  // Enable shortcuts and signal ready
+  grist.enableKeyboardShortcuts?.();
+  const columnsMappingOptions = getGristOptions();
+  grist.ready({
+    requiredAccess: 'full',
+    columns: columnsMappingOptions,
+    allowSelectBy: true,
+  });
+});
+
+
 
 // Data for column mapping fields in Widget GUI
 function getGristOptions() {
