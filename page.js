@@ -720,24 +720,39 @@ async function configureGristSettings() {
   });
 
   // This is the correct place for the grist.on("userAttributes") listener
-  grist.on("userAttributes", function(userAttrs) {
-    console.log("RapidShade: Received user attributes:", userAttrs); // KEEP THIS LOG
-    const options = userAttrs.doubleClickActions || {};
-    window.gristCalendar.doubleClickActionTargetPage1 = options.targetPage1;
-    window.gristCalendar.doubleClickActionTargetIdField1 = options.targetIdField1;
-    window.gristCalendar.doubleClickActionTargetPage2 = options.targetPage2;
-    window.gristCalendar.doubleClickActionTargetIdField2 = options.targetIdField2;
-    window.gristCalendar.doubleClickActionTargetPage3 = options.targetPage3;
-    window.gristCalendar.doubleClickActionTargetIdField3 = options.targetIdField3;
+grist.on("userAttributes", function(userAttrs) {
+  console.log("RapidShade: Received user attributes:", userAttrs);
 
-    // You also need to call the setDoubleClickTargets method of your CalendarHandler
-    // This assumes calendarHandler is already initialized at this point.
-    calendarHandler.setDoubleClickTargets([
-      { page: options.targetPage1, idField: options.targetIdField1 },
-      { page: options.targetPage2, idField: options.targetIdField2 },
-      { page: options.targetPage3, idField: options.targetIdField3 },
-    ].filter(t => t.page)); // Filter out empty targets
+  const options = userAttrs.doubleClickActions || {};
+  const targets = [
+    { page: options.targetPage1, idField: options.targetIdField1 },
+    { page: options.targetPage2, idField: options.targetIdField2 },
+    { page: options.targetPage3, idField: options.targetIdField3 }
+  ].filter(t => t.page);
+
+  calendarHandler.setDoubleClickTargets(targets);
+
+  // ✅ Attach double-click event after targets are fully set
+  document.addEventListener("dblclick", async function(ev) {
+    if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
+
+    const eventDom = ev.target.closest("[data-event-id]");
+    if (!eventDom) return;
+
+    const eventId = Number(eventDom.dataset.eventId);
+    if (Number.isNaN(eventId)) return;
+
+    const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
+    if (!event) return;
+
+    try {
+      await calendarHandler.handleDoubleClickAction(event.id);
+    } catch (err) {
+      console.error("RapidShade: Failed double-click handler:", err);
+    }
   });
+});
+
 
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
   grist.enableKeyboardShortcuts?.();
@@ -1156,7 +1171,7 @@ document.addEventListener('dblclick', async (ev) => {
   }
 });
 */
-
+/*
 document.addEventListener('dblclick', async function(ev) {
   if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
 
@@ -1176,4 +1191,4 @@ document.addEventListener('dblclick', async function(ev) {
   }
 });
 
-
+*/
