@@ -1,4 +1,4 @@
-console.log("RAPID-ORIG-10_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
+console.log("RAPID-ORIG-11_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
 // to keep all calendar related logic;
 let calendarHandler;
 
@@ -883,9 +883,10 @@ document.addEventListener('dblclick', async (ev) => {
   if (!event) { return; }
 
   
-// Redirect using hardcoded base URL
-  const baseUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051";
-  const targetUrl = `${baseUrl}/p/28#${event.id}`;
-  window.location.href = targetUrl;
+// Redirect to parent window using window.top, to avoid loading inside the iframe
+  const targetUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051/p/28#" + event.id;
+  window.top.location.href = targetUrl;
 
 });
+
+
