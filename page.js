@@ -883,10 +883,28 @@ document.addEventListener('dblclick', async (ev) => {
   if (!event) { return; }
 
   
-// Redirect to parent window using window.top, to avoid loading inside the iframe
-  const targetUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051/p/28#" + event.id;
+// Redirect to parent window using window.top, include encoded row info
+  const targetUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051/p/28#grist-navigate:EVENTS:" + event.id;
   window.top.location.href = targetUrl;
 
 });
+
+
+
+// If redirected with a hash like #grist-navigate:EVENTS:123, select that record on load
+document.addEventListener('DOMContentLoaded', async () => {
+  const hash = window.location.hash;
+  const match = hash.match(/^#grist-navigate:(.+?):(\d+)$/);
+  if (match) {
+    const [, tableId, rowIdStr] = match;
+    const rowId = parseInt(rowIdStr, 10);
+    if (!isNaN(rowId)) {
+      await grist.ready();
+      await grist.setCursorPos({rowId, tableId});
+      history.replaceState(null, '', window.location.pathname);
+    }
+  }
+});
+
 
 
