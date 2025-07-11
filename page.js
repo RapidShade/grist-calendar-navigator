@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_LOG08_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+console.log("RAPID1198_LOG09RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
 
 let calendarHandler;
 
@@ -619,6 +619,16 @@ ready(async () => {
 
     // NOW calendarHandler is guaranteed to be ready
     calendarHandler.setDoubleClickTargets(targets);
+
+    console.log("RapidShade: doubleClickTargets to apply:", calendarHandler._doubleClickTargets);
+
+// If any click was queued before targets arrived, retry
+if (window.gristCalendar.queuedClickRecordId && calendarHandler._doubleClickTargets?.length > 0) {
+  console.log("RapidShade: Processing queued click for record", window.gristCalendar.queuedClickRecordId);
+  calendarHandler.handleDoubleClickAction(window.gristCalendar.queuedClickRecordId);
+  window.gristCalendar.queuedClickRecordId = null;
+}
+
   });
 
   // Enable shortcuts and signal ready
@@ -1238,26 +1248,31 @@ document.addEventListener('dblclick', async (ev) => {
       return;
     }
 
-    // Custom navigation logic
-    const targetPage1 = window.gristCalendar.doubleClickActionTargetPage1;
-    const targetIdField1 = window.gristCalendar.doubleClickActionTargetIdField1;
-
-    if (targetPage1) {
-      console.log(`Navigating to custom page ${targetPage1} with event ID ${event.id}`);
-      await grist.navigate({
-        pageRef: targetPage1,
-        rowRef: targetIdField1 ? { tableRef: event.tableId, rowId: event.id } : undefined
-      });
-    } else {
-      // fallback
-      console.log("No custom targets, fallback to Record Card");
-      await grist.setCursorPos({ rowId: event.id });
-      await grist.commandApi.run('viewAsCard');
+    // ⏳ If doubleClickTargets are not yet loaded, queue this attempt
+    if (!calendarHandler._doubleClickTargets || calendarHandler._doubleClickTargets.length === 0) {
+      console.log("RapidShade: No doubleClickTargets set. Queuing this double-click for retry...");
+      window.gristCalendar.queuedClickRecordId = event.id;
+      setTimeout(() => {
+        if (calendarHandler._doubleClickTargets?.length > 0) {
+          console.log("RapidShade: Retrying queued double-click now.");
+          calendarHandler.handleDoubleClickAction(event.id);
+        } else {
+          console.warn("RapidShade: Still no targets after delay. Falling back.");
+          grist.setCursorPos({ rowId: event.id });
+          grist.commandApi.run('viewAsCard');
+        }
+      }, 500);
+      return;
     }
+
+    // 🧭 Use the CalendarHandler logic now that targets are available
+    calendarHandler.handleDoubleClickAction(event.id);
+
   } catch (e) {
     console.error("Error handling double click:", e);
   }
 });
+
 
 // DEBUG CHECK: Confirm userAttributes were received
 setTimeout(() => {
