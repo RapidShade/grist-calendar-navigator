@@ -1,4 +1,4 @@
-console.log("RAPID-ORIG-08_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
+console.log("RAPID-ORIG-10_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
 // to keep all calendar related logic;
 let calendarHandler;
 
@@ -883,9 +883,9 @@ document.addEventListener('dblclick', async (ev) => {
   if (!event) { return; }
 
   
-// Redirect using Grist's actual document URL
-  const docUrl = await grist.docUrl();
-  const targetUrl = `${docUrl.replace(/\/$/, '')}/p/28#${event.id}`;
+// Redirect using hardcoded base URL
+  const baseUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051";
+  const targetUrl = `${baseUrl}/p/28#${event.id}`;
   window.location.href = targetUrl;
 
 });
