@@ -35,6 +35,7 @@ function getLanguage() {
 //registering code to run when a document is ready
 
 // === EVENT BINDING ===
+/*
 document.addEventListener('dblclick', async function(ev) {
   if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
   const eventDom = ev.target.closest("[data-event-id]");
@@ -45,6 +46,7 @@ document.addEventListener('dblclick', async function(ev) {
   if (!event) return;
   await calendarHandler.handleDoubleClickAction(event.id);
 });
+*/
 function ready(fn) {
   if (document.readyState !== 'loading') {
     fn();
@@ -1100,3 +1102,49 @@ function clean(obj) {
 
 // RapidShade - GEM - DEBUG VERSION
     console.log("RapidShade: grist.navigate() called."); // ADD THIS
+
+// Function to resolve double-click navigation based on widget options
+function handleDoubleClickNavigation(rowId, config) {
+  if (!config) return false;
+
+  const targets = ['Target1', 'Target2', 'Target3'];
+  for (const target of targets) {
+    const pageId = config[`TargetPage${target.slice(-1)}`];
+    const tableId = config[target];
+    const keyField = config[`TargetKey${target.slice(-1)}`];
+
+    if (pageId && tableId && keyField) {
+      grist.setActiveDocPage(pageId);
+      grist.setCursorPos(tableId, { rowId });
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// === DOUBLE-CLICK EVENT BINDING ===
+document.addEventListener('dblclick', async (ev) => {
+  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
+
+  const eventEl = ev.target.closest('.fc-event');
+  if (!eventEl) return;
+
+  const gristRecordId = parseInt(eventEl.dataset.gristRecordId);
+  if (!gristRecordId) return;
+
+  try {
+    const selectedTable = await grist.docApi.fetchSelectedTable();
+    const selectedRecord = await grist.docApi.fetchSelectedRecord();
+    const config = await grist.docApi.getWidgetOptions();
+
+    if (!handleDoubleClickNavigation(gristRecordId, config)) {
+      console.log('No custom double-click targets configured. Falling back to default behavior.');
+      grist.setCursorPos(selectedTable, { rowId: gristRecordId });
+      grist.run();
+    }
+  } catch (err) {
+    console.error('Double-click navigation error:', err);
+  }
+});
+
