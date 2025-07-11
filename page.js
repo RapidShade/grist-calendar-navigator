@@ -420,6 +420,7 @@ class CalendarHandler {
 
   async _navigateToPageAndRecord(pageName, idFieldName, recordId) {
     try {
+/*      
       // The grist.navigate API can take 'row' for rowId, but not directly a lookup for another field.
       // So we navigate to the page and then use setSelectedRows.
       // NOTE: This assumes the target page displays a table that contains the `idFieldName`
@@ -432,7 +433,27 @@ class CalendarHandler {
       // For simplicity, we will assume `recordId` passed from the calendar *is* the Grist `rowId`
       // for the target table as well.
       await grist.setSelectedRows([recordId]);
+*/
+await grist.navigate({ page: pageName });
 
+// Fetch table name from page name (requires consistent naming, or adapt)
+const targetTable = await grist.docApi.fetchSelectedTable();
+const targetData = await grist.docApi.fetchTable(targetTable);
+
+if (!targetData[idFieldName]) {
+  console.warn(`ID field "${idFieldName}" not found in table "${targetTable}".`);
+  return;
+}
+
+const rowIndex = targetData[idFieldName].findIndex(v => v === recordId);
+if (rowIndex === -1) {
+  alert(`No matching record found in "${targetTable}" where "${idFieldName}" equals "${recordId}"`);
+  return;
+}
+
+const rowId = targetData.id[rowIndex];
+await grist.setCursorPos(targetTable, { rowId });
+      
       console.log(`Mapsd to page "${pageName}" and attempted to select record with ID: ${recordId} using field: ${idFieldName}`);
     } catch (error) {
       console.error(`Failed to navigate to page "${pageName}" with record ID ${recordId}:`, error);
