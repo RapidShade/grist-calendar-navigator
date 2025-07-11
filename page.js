@@ -1,4 +1,5 @@
-console.log("RAPID-ORIG-12_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
+console.log("RAPID-ORIG-13_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
+//const targetUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051/p/28#grist-navigate:EVENTS:" + event.id;
 // to keep all calendar related logic;
 let calendarHandler;
 
@@ -894,17 +895,28 @@ document.addEventListener('dblclick', async (ev) => {
 // If redirected with a hash like #grist-navigate:EVENTS:123, select that record on load
 document.addEventListener('DOMContentLoaded', async () => {
   const hash = window.location.hash;
+  console.log("RapidShade: Loaded page with hash:", hash);
   const match = hash.match(/^#grist-navigate:(.+?):(\d+)$/);
   if (match) {
     const [, tableId, rowIdStr] = match;
+    console.log("RapidShade: Parsed hash — tableId:", tableId, "rowId:", rowIdStr);
     const rowId = parseInt(rowIdStr, 10);
     if (!isNaN(rowId)) {
-      await grist.ready();
-      await grist.setCursorPos({rowId, tableId});
-      history.replaceState(null, '', window.location.pathname);
+      try {
+        console.log("RapidShade: Waiting for grist.ready...");
+        await grist.ready();
+        console.log("RapidShade: Calling grist.setCursorPos...");
+        await grist.setCursorPos({rowId, tableId});
+        console.log("RapidShade: Successfully navigated to rowId:", rowId);
+        history.replaceState(null, '', window.location.pathname);
+      } catch (err) {
+        console.error("RapidShade: Error setting cursor position:", err);
+      }
+    } else {
+      console.warn("RapidShade: Invalid rowId in hash:", rowIdStr);
     }
+  } else {
+    console.log("RapidShade: No matching grist-navigate hash found.");
   }
 });
-
-
 
