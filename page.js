@@ -1217,3 +1217,13 @@ document.addEventListener('dblclick', async (ev) => {
   }
 });
 
+// DEBUG CHECK: Confirm userAttributes were received
+setTimeout(() => {
+  if (!window.gristCalendar?.calendarHandler?._doubleClickTargets?.length) {
+    console.warn("RapidShade: No doubleClickTargets set. Check userAttributes or apply timing.");
+  } else {
+    console.log("RapidShade: Final doubleClickTargets:", window.gristCalendar.calendarHandler._doubleClickTargets);
+  }
+}, 3000);
+
+
