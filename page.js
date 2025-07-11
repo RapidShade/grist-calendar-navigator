@@ -1,4 +1,4 @@
-console.log("RAPID-ORIG-13_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
+console.log("RAPID-ORIG-14_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
 //const targetUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051/p/28#grist-navigate:EVENTS:" + event.id;
 // to keep all calendar related logic;
 let calendarHandler;
