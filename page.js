@@ -419,32 +419,25 @@ class CalendarHandler {
   }
 
   async _navigateToPageAndRecord(pageName, idFieldName, recordId) {
+    try {
+      // The grist.navigate API can take 'row' for rowId, but not directly a lookup for another field.
+      // So we navigate to the page and then use setSelectedRows.
+      // NOTE: This assumes the target page displays a table that contains the `idFieldName`
+      // and that the `recordId` from the calendar *is* a value in that `idFieldName` column.
+      // If your target table uses a *different* ID for the same logical record,
+      // you would need more advanced logic involving fetching the target table and performing a lookup.
+      await grist.navigate({ page: pageName });
 
-    await grist.navigate({ page: pageName });
+      // After navigating, we need to find the specific row in the new table based on idFieldName.
+      // For simplicity, we will assume `recordId` passed from the calendar *is* the Grist `rowId`
+      // for the target table as well.
+      await grist.setSelectedRows([recordId]);
 
-    const tableName = await grist.docApi.fetchSelectedTable();
-    const tableData = await grist.docApi.fetchTable(tableName);
-
-    if (!tableData || !tableData[idFieldName]) {
-      console.warn(`Field '${idFieldName}' not found in table '${tableName}'`);
-      return;
+      console.log(`Mapsd to page "${pageName}" and attempted to select record with ID: ${recordId} using field: ${idFieldName}`);
+    } catch (error) {
+      console.error(`Failed to navigate to page "${pageName}" with record ID ${recordId}:`, error);
+      alert(`Could not navigate to "${pageName}". Make sure the page exists and the ID field is correctly configured.`);
     }
-
-//    const index = tableData[idFieldName].findIndex(val => val === recordId);
-    const index = tableData[idFieldName].findIndex(val => {
-      if (typeof val === 'object' && val !== null && 'id' in val) {
-        return val.id === recordId;
-      }
-      return val === recordId;
-    });
-    
-    if (index === -1) {
-      console.warn(`Record ID '${recordId}' not found in field '${idFieldName}'`);
-      return;
-    }
-
-    const rowId = tableData.id[index];
-    await grist.setCursorPos(tableName, { rowId });
   }
 
   async _showPageSelectionDialog(recordId, targets) {
@@ -720,39 +713,24 @@ async function configureGristSettings() {
   });
 
   // This is the correct place for the grist.on("userAttributes") listener
-grist.on("userAttributes", function(userAttrs) {
-  console.log("RapidShade: Received user attributes:", userAttrs);
+  grist.on("userAttributes", function(userAttrs) {
+    console.log("RapidShade: Received user attributes:", userAttrs); // KEEP THIS LOG
+    const options = userAttrs.doubleClickActions || {};
+    window.gristCalendar.doubleClickActionTargetPage1 = options.targetPage1;
+    window.gristCalendar.doubleClickActionTargetIdField1 = options.targetIdField1;
+    window.gristCalendar.doubleClickActionTargetPage2 = options.targetPage2;
+    window.gristCalendar.doubleClickActionTargetIdField2 = options.targetIdField2;
+    window.gristCalendar.doubleClickActionTargetPage3 = options.targetPage3;
+    window.gristCalendar.doubleClickActionTargetIdField3 = options.targetIdField3;
 
-  const options = userAttrs.doubleClickActions || {};
-  const targets = [
-    { page: options.targetPage1, idField: options.targetIdField1 },
-    { page: options.targetPage2, idField: options.targetIdField2 },
-    { page: options.targetPage3, idField: options.targetIdField3 }
-  ].filter(t => t.page);
-
-  calendarHandler.setDoubleClickTargets(targets);
-
-  // ✅ Attach double-click event after targets are fully set
-  document.addEventListener("dblclick", async function(ev) {
-    if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
-
-    const eventDom = ev.target.closest("[data-event-id]");
-    if (!eventDom) return;
-
-    const eventId = Number(eventDom.dataset.eventId);
-    if (Number.isNaN(eventId)) return;
-
-    const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
-    if (!event) return;
-
-    try {
-      await calendarHandler.handleDoubleClickAction(event.id);
-    } catch (err) {
-      console.error("RapidShade: Failed double-click handler:", err);
-    }
+    // You also need to call the setDoubleClickTargets method of your CalendarHandler
+    // This assumes calendarHandler is already initialized at this point.
+    calendarHandler.setDoubleClickTargets([
+      { page: options.targetPage1, idField: options.targetIdField1 },
+      { page: options.targetPage2, idField: options.targetIdField2 },
+      { page: options.targetPage3, idField: options.targetIdField3 },
+    ].filter(t => t.page)); // Filter out empty targets
   });
-});
-
 
   // TODO: remove optional chaining once grist-plugin-api.js includes this function.
   grist.enableKeyboardShortcuts?.();
@@ -1171,24 +1149,52 @@ document.addEventListener('dblclick', async (ev) => {
   }
 });
 */
-/*
-document.addEventListener('dblclick', async function(ev) {
-  if (!ev.target || !calendarHandler || !calendarHandler.calendar) return;
 
-  const eventDom = ev.target.closest("[data-event-id]");
-  if (!eventDom) return;
-
-  const eventId = Number(eventDom.dataset.eventId);
-  if (Number.isNaN(eventId)) return;
-
-  const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
-  if (!event) return;
-
+document.addEventListener('dblclick', async (ev) => {
   try {
-    await calendarHandler.handleDoubleClickAction(event.id);
-  } catch (err) {
-    console.error("RapidShade: Failed double-click handler:", err);
+    console.log("Double-click triggered");
+
+    if (!ev.target || !calendarHandler || !calendarHandler.calendar) {
+      console.log("Missing target or calendarHandler");
+      return;
+    }
+
+    const eventDom = ev.target.closest("[data-event-id]");
+    if (!eventDom) {
+      console.warn("Double-clicked DOM has no [data-event-id]");
+      return;
+    }
+
+    const eventId = Number(eventDom.dataset.eventId);
+    if (Number.isNaN(eventId)) {
+      console.warn("Event ID is not a number");
+      return;
+    }
+
+    const event = calendarHandler.calendar.getEvent(eventId, CALENDAR_NAME);
+    if (!event) {
+      console.warn("Event object not found in calendar model");
+      return;
+    }
+
+    // Custom navigation logic
+    const targetPage1 = window.gristCalendar.doubleClickActionTargetPage1;
+    const targetIdField1 = window.gristCalendar.doubleClickActionTargetIdField1;
+
+    if (targetPage1) {
+      console.log(`Navigating to custom page ${targetPage1} with event ID ${event.id}`);
+      await grist.navigate({
+        pageRef: targetPage1,
+        rowRef: targetIdField1 ? { tableRef: event.tableId, rowId: event.id } : undefined
+      });
+    } else {
+      // fallback
+      console.log("No custom targets, fallback to Record Card");
+      await grist.setCursorPos({ rowId: event.id });
+      await grist.commandApi.run('viewAsCard');
+    }
+  } catch (e) {
+    console.error("Error handling double click:", e);
   }
 });
 
-*/
