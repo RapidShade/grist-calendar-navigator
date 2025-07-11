@@ -1,4 +1,4 @@
-console.log("RAPID-ORIG-04_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
+console.log("RAPID-ORIG-06_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
 // to keep all calendar related logic;
 let calendarHandler;
 
@@ -884,7 +884,7 @@ document.addEventListener('dblclick', async (ev) => {
 
   
 // Navigate to Overview ΕΞΟΔΑ page and focus the clicked event record in the EVENTS table
-  await grist.commandApi.setCursorPos({
+  await grist.setCursorPos({
     rowId: event.id,
     tableId: 'EVENTS',
     sectionRef: null,
@@ -892,3 +892,5 @@ document.addEventListener('dblclick', async (ev) => {
   });
 
 });
+
+
