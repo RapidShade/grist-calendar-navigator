@@ -1106,8 +1106,6 @@ function clean(obj) {
     await grist.setCursorPos({ rowId: event.id });
     await grist.commandApi.run('viewAsCard');
     console.log("RapidShade: Default Record Card action called."); // ADD THIS
-  }
-});
 
 // RapidShade - GEM - page.js (around line 520, replace the existing dblclick listener content)
 /*
