@@ -1,5 +1,5 @@
 // to keep all calendar related logic;
-console.log("RAPID1198_LOG10RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
+console.log("RAPID1198_LOG11_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // ADD THIS LINE
 
 let calendarHandler;
 
@@ -770,8 +770,11 @@ async function configureGristSettings() {
 // Ensure user attributes are applied only when calendarHandler is ready
 function applyDoubleClickTargets(userAttrs) {
   console.log("RapidShade: Received user attributes:", userAttrs); // DO NOT REMOVE
+  console.log("RAPID1198_LOG11_RapidShade: userAttributes received:", userAttrs); // ← ADD THIS
 
   const options = userAttrs.doubleClickActions || {};
+    console.log("RAPID1198_LOG12_RapidShade: doubleClickActions resolved:", options); // ← ADD THIS
+
   const targets = [
     { page: options.targetPage1, idField: options.targetIdField1 },
     { page: options.targetPage2, idField: options.targetIdField2 },
