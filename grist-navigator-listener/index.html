@@ -5,65 +5,39 @@
   <title>Grist Navigator Listener</title>
 </head>
 <body>
-  <script>
-    console.log("🔁 Loading Grist Navigator Listener v2.32");
+<script>
+  console.log("🔁 Loading Grist Navigator Listener v2.31");
 
-    async function getGristDocAPI() {
-      return new Promise((resolve) => {
-        // Try modern injection
-        if (window.grist) {
-          console.log("✅ Found window.grist");
-          resolve(window.grist);
-          return;
-        }
+  // Request gristDocAPI
+  function requestGristAPI() {
+    console.log("📡 Requesting gristDocAPI via postMessage...");
+    parent.postMessage({ type: "grist", message: "requestAPI" }, "*");
+  }
 
-        // Fallback to postMessage
-        console.log("📡 Requesting gristDocAPI via postMessage (iframe mode)...");
-        window.parent.postMessage({ type: "getGristDocAPI" }, "*");
-
-        window.addEventListener("message", function listener(event) {
-          if (event.data && event.data.type === "gristDocAPI") {
-            console.log("✅ Received gristDocAPI via postMessage");
-            window.removeEventListener("message", listener);
-            resolve(event.data.api);
-          }
-        });
-
-        // Optional: Timeout fallback
-        setTimeout(() => {
-          console.warn("⚠️ No gristDocAPI received after timeout.");
-        }, 5000);
-      });
-    }
-
-    async function run() {
-      const api = await getGristDocAPI();
-      if (!api) {
-        console.error("❌ gristDocAPI is undefined.");
-        return;
+  function waitForGristAPI(callback) {
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      if (data && data.type === "grist" && data.api) {
+        console.log("✅ Received gristDocAPI via postMessage");
+        callback(data.api);
       }
+    });
 
-      const hash = window.location.hash;
-      const match = hash.match(/grist-navigate:([^:]+):(\d+)/);
-      if (!match) {
-        console.warn("⚠️ No grist-navigate in hash:", hash);
-        return;
-      }
+    // Repeatedly send request in case first is dropped
+    let tries = 0;
+    const interval = setInterval(() => {
+      if (tries++ > 20) return clearInterval(interval);
+      requestGristAPI();
+    }, 500);
+  }
 
-      const [, table, rowId] = match;
-      console.log(`➡️ Navigating to table ${table}, row ${rowId}`);
+  waitForGristAPI((api) => {
+    // Now you can use api.setCursor(), etc.
+    console.log("📌 Ready to navigate using received API");
 
-      try {
-        await api.navigateToTable(table);
-        await new Promise((res) => setTimeout(res, 300)); // Small delay
-        await api.setCursor(table, parseInt(rowId, 10));
-        console.log("✅ Navigation complete.");
-      } catch (e) {
-        console.error("❌ Navigation failed:", e);
-      }
-    }
-
-    run();
-  </script>
+    // Example:
+    api.setCursor('EVENTS', 9);
+  });
+</script>
 </body>
 </html>
