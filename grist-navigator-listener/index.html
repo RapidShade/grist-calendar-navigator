@@ -7,45 +7,55 @@
 <body>
   <p>Navigation listener loaded.</p>
 
-  <script>
-    console.log("RapidShade: Navigator Listener v1.20");
+  <script type="module">
+    console.log("RapidShade: Navigator Listener v1.21");
 
     let gristAPI = null;
 
-    function tryNavigate() {
+    function tryRequestAPI() {
+      console.log("RapidShade: Posting message to parent");
+      window.parent.postMessage({type: 'gristDocAPI'}, '*');
+    }
+
+    function tryHandleHash() {
       const hash = window.location.hash;
       console.log("RapidShade: Current hash is", hash);
       const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):([0-9]+)$/);
-      if (match) {
-        const [_, table, rowIdStr] = match;
-        const rowId = parseInt(rowIdStr, 10);
-        console.log(`RapidShade: Parsed table=${table}, row=${rowId}`);
-        if (gristAPI) {
-          gristAPI.setCursor(table, rowId)
-            .then(() => console.log("RapidShade: Cursor set successfully"))
-            .catch(err => console.error("RapidShade: Error setting cursor", err));
-        } else {
-          console.warn("RapidShade: gristAPI not ready yet, retrying...");
-          setTimeout(tryNavigate, 300);  // Retry a bit later
-        }
-      } else {
+      if (!match) {
         console.warn("RapidShade: No matching navigation hash");
+        return;
       }
+
+      const [_, table, rowIdStr] = match;
+      const rowId = parseInt(rowIdStr, 10);
+      console.log(`RapidShade: Parsed table=${table}, row=${rowId}`);
+
+      if (!gristAPI) {
+        console.error("RapidShade: gristAPI not ready yet");
+        return;
+      }
+
+      gristAPI.setCursor(table, rowId)
+        .then(() => console.log("RapidShade: Cursor set successfully"))
+        .catch(err => console.error("RapidShade: Error setting cursor", err));
     }
 
-    // Listen for injection of the Grist API
     window.addEventListener("message", (event) => {
       if (event.data && event.data.gristDocAPI) {
         gristAPI = event.data.gristDocAPI;
         console.log("RapidShade: Grist API injected");
 
-        // Wait a bit for page to render, then attempt navigation
-        setTimeout(tryNavigate, 300);
+        // Delay to ensure Grist layout finishes before setting cursor
+        setTimeout(() => {
+          tryHandleHash();
+        }, 1000);
       }
     });
 
-    // Trigger API injection request
-    window.parent.postMessage({type: 'gristDocAPI'}, '*');
+    // Try to request the API after short delays to deal with race conditions
+    setTimeout(tryRequestAPI, 500);
+    setTimeout(tryRequestAPI, 1000);
+    setTimeout(tryRequestAPI, 1500);
   </script>
 </body>
 </html>
