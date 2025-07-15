@@ -1,4 +1,4 @@
-console.log("RAPID-ORIG-20_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
+console.log("RAPID-ORIG-21_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
 //const targetUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051/p/28#grist-navigate:EVENTS:" + event.id;
 // to keep all calendar related logic;
 let calendarHandler;
@@ -962,4 +962,13 @@ document.addEventListener('dblclick', async (ev) => {
   console.log("RapidShade: Posting message to parent", message);
   window.parent.postMessage(message, "*");
 });
+
+setTimeout(() => {
+  if (gristAPI) {
+    console.log("✅ Calling setCursor on Events from listener");
+    gristAPI.setCursor("Events", 9); // or a valid ID from your table
+  } else {
+    console.warn("❌ gristAPI not injected yet");
+  }
+}, 2000); // 2 seconds after load
 
