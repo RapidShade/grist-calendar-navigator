@@ -6,25 +6,34 @@
 </head>
 <body>
 <script>
-  console.log("🔁 Loading Grist Navigator Listener v2.23");
+  console.log("🔁 Loading Grist Navigator Listener v2.24");
+
+  async function waitForWindowGrist(timeout = 3000) {
+    const start = Date.now();
+    while (!window.grist && Date.now() - start < timeout) {
+      console.log("⏳ Waiting for window.grist...");
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return window.grist || null;
+  }
 
   async function getGristDocAPI() {
-    if (window.grist) {
-      console.log("✅ gristDocAPI available via window.grist (inline mode)");
-      return window.grist;
+    let api = await waitForWindowGrist();
+    if (api) {
+      console.log("✅ gristDocAPI detected via window.grist");
+      return api;
     }
 
     return new Promise((resolve) => {
-      console.log("⏳ Waiting for gristDocAPI via postMessage (iframe mode)...");
+      console.warn("⚠️ window.grist not found — falling back to postMessage");
       window.addEventListener("message", function handler(event) {
         if (event.data && event.data.gristDocAPI) {
-          console.log("✅ gristDocAPI received via postMessage");
           window.removeEventListener("message", handler);
+          console.log("✅ gristDocAPI received via postMessage");
           resolve(event.data.gristDocAPI);
         }
       });
 
-      // Trigger response from parent
       window.parent?.postMessage({ type: "getGristDocAPI" }, "*");
     });
   }
@@ -32,18 +41,87 @@
   (async () => {
     const grist = await getGristDocAPI();
 
+    if (!grist) {
+      console.error("❌ Grist API could not be loaded.");
+      return;
+    }
+
     grist.onRecord((record) => {
       console.log("📡 Received record:", record);
-
       const target = record.Target1;
       const key = record.TargetKey1;
 
-      if (target && key !== undefined && key !== null) {
+      if (target && key != null) {
         const fragment = `#grist-navigate:${target}:${key}`;
-        console.log("🔁 Posting message to parent:", fragment);
+        console.log("🔁 Posting fragment to parent:", fragment);
         window.parent?.postMessage(fragment, "*");
       } else {
-        console.warn("⚠️ No valid Target1 or TargetKey1 in record:", record);
+        console.warn("⚠️ Record missing Target1 or TargetKey1");
+      }
+    });
+  })();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Grist Navigator Listener</title>
+</head>
+<body>
+<script>
+  console.log("🔁 Loading Grist Navigator Listener v2.24");
+
+  async function waitForWindowGrist(timeout = 3000) {
+    const start = Date.now();
+    while (!window.grist && Date.now() - start < timeout) {
+      console.log("⏳ Waiting for window.grist...");
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return window.grist || null;
+  }
+
+  async function getGristDocAPI() {
+    let api = await waitForWindowGrist();
+    if (api) {
+      console.log("✅ gristDocAPI detected via window.grist");
+      return api;
+    }
+
+    return new Promise((resolve) => {
+      console.warn("⚠️ window.grist not found — falling back to postMessage");
+      window.addEventListener("message", function handler(event) {
+        if (event.data && event.data.gristDocAPI) {
+          window.removeEventListener("message", handler);
+          console.log("✅ gristDocAPI received via postMessage");
+          resolve(event.data.gristDocAPI);
+        }
+      });
+
+      window.parent?.postMessage({ type: "getGristDocAPI" }, "*");
+    });
+  }
+
+  (async () => {
+    const grist = await getGristDocAPI();
+
+    if (!grist) {
+      console.error("❌ Grist API could not be loaded.");
+      return;
+    }
+
+    grist.onRecord((record) => {
+      console.log("📡 Received record:", record);
+      const target = record.Target1;
+      const key = record.TargetKey1;
+
+      if (target && key != null) {
+        const fragment = `#grist-navigate:${target}:${key}`;
+        console.log("🔁 Posting fragment to parent:", fragment);
+        window.parent?.postMessage(fragment, "*");
+      } else {
+        console.warn("⚠️ Record missing Target1 or TargetKey1");
       }
     });
   })();
