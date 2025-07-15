@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+  console.log("RapidShade: Navigator Listener v 1.01");
+
+  let gristAPI = null;
+
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.gristDocAPI) {
+      gristAPI = event.data.gristDocAPI;
+      console.log("RapidShade: Grist API injected");
+
+      setTimeout(() => {
+        const hash = window.location.hash;
+        console.log("RapidShade: Current hash is", hash);
+        const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):([0-9]+)$/);
+        if (match) {
+          const [_, table, rowIdStr] = match;
+          const rowId = parseInt(rowIdStr, 10);
+          console.log(`RapidShade: Parsed table=${table}, row=${rowId}`);
+
+          gristAPI.setCursor(table, rowId)
+            .then(() => console.log("RapidShade: Cursor set successfully"))
+            .catch(err => console.error("RapidShade: Error setting cursor", err));
+        } else {
+          console.warn("RapidShade: No matching navigation hash");
+        }
+      }, 500); // Wait a bit to allow page layout
+    }
+  });
+
+  // Actively request the API
+  window.parent.postMessage({type: 'gristDocAPI'}, '*');
+</script>
+
+</head>
+<body>
+  <p>Navigation listener loaded.</p>
+</body>
+</html>
