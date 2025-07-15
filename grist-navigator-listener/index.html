@@ -6,7 +6,7 @@
 </head>
 <body style="display:none">
   <script>
-    console.log("RapidShade: Navigator Listener v2.10");
+    console.log("RapidShade: Navigator Listener v2.20");
 
     let gristAPI = null;
 
@@ -33,7 +33,6 @@
       }
     });
 
-    // Ask Grist to send us the API
     setTimeout(() => {
       console.log("🔁 Requesting gristDocAPI from parent");
       window.parent.postMessage({ type: "gristDocAPI" }, "*");
@@ -41,3 +40,4 @@
   </script>
 </body>
 </html>
+
