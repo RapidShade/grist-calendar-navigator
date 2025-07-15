@@ -4,38 +4,66 @@
   <meta charset="UTF-8" />
   <title>Grist Navigator Listener</title>
 </head>
-<body style="display:none">
+<body>
   <script>
-    console.log("🔁 Loading Grist Navigator Listener v2.31");
+    console.log("🔁 Loading Grist Navigator Listener v2.32");
 
-    let gristAPI = null;
-
-    // Listen for Grist injecting the API
-    window.addEventListener("message", async (event) => {
-      if (event?.data?.gristDocAPI && !gristAPI) {
-        gristAPI = event.data.gristDocAPI;
-        console.log("✅ gristDocAPI received");
-
-        const hash = window.location.hash;
-        console.log("🔍 URL hash:", hash);
-        const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):(\d+)$/);
-        if (match) {
-          const [, table, rowStr] = match;
-          const rowId = parseInt(rowStr, 10);
-          console.log(`➡️ Navigating to table: ${table}, row: ${rowId}`);
-          try {
-            await gristAPI.setCursor(table, rowId);
-            console.log("✅ Cursor set!");
-          } catch (err) {
-            console.error("❌ Failed to set cursor:", err);
-          }
-        } else {
-          console.warn("⚠️ Invalid or missing hash.");
+    async function getGristDocAPI() {
+      return new Promise((resolve) => {
+        // Try modern injection
+        if (window.grist) {
+          console.log("✅ Found window.grist");
+          resolve(window.grist);
+          return;
         }
-      }
-    });
 
-    console.log("⏳ Waiting for gristDocAPI via postMessage (iframe mode)...");
+        // Fallback to postMessage
+        console.log("📡 Requesting gristDocAPI via postMessage (iframe mode)...");
+        window.parent.postMessage({ type: "getGristDocAPI" }, "*");
+
+        window.addEventListener("message", function listener(event) {
+          if (event.data && event.data.type === "gristDocAPI") {
+            console.log("✅ Received gristDocAPI via postMessage");
+            window.removeEventListener("message", listener);
+            resolve(event.data.api);
+          }
+        });
+
+        // Optional: Timeout fallback
+        setTimeout(() => {
+          console.warn("⚠️ No gristDocAPI received after timeout.");
+        }, 5000);
+      });
+    }
+
+    async function run() {
+      const api = await getGristDocAPI();
+      if (!api) {
+        console.error("❌ gristDocAPI is undefined.");
+        return;
+      }
+
+      const hash = window.location.hash;
+      const match = hash.match(/grist-navigate:([^:]+):(\d+)/);
+      if (!match) {
+        console.warn("⚠️ No grist-navigate in hash:", hash);
+        return;
+      }
+
+      const [, table, rowId] = match;
+      console.log(`➡️ Navigating to table ${table}, row ${rowId}`);
+
+      try {
+        await api.navigateToTable(table);
+        await new Promise((res) => setTimeout(res, 300)); // Small delay
+        await api.setCursor(table, parseInt(rowId, 10));
+        console.log("✅ Navigation complete.");
+      } catch (e) {
+        console.error("❌ Navigation failed:", e);
+      }
+    }
+
+    run();
   </script>
 </body>
 </html>
