@@ -963,12 +963,4 @@ document.addEventListener('dblclick', async (ev) => {
   window.parent.postMessage(message, "*");
 });
 
-setTimeout(() => {
-  if (gristAPI) {
-    console.log("✅ Calling setCursor on Events from listener");
-    gristAPI.setCursor("Events", 9); // or a valid ID from your table
-  } else {
-    console.warn("❌ gristAPI not injected yet");
-  }
-}, 2000); // 2 seconds after load
 
