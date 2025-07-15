@@ -2,12 +2,13 @@
 <html>
 <head>
 <script>
-  console.log("RapidShade: Navigator Listener v 0.4");
-  window.addEventListener("load", async () => {
-    console.log("RapidShade: Navigator Listener Loaded");
+  console.log("RapidShade: Navigator Listener v 0.5");
 
-    // Wait until `grist` is available
+  window.addEventListener("load", async () => {
+    console.log("RapidShade: Window load triggered");
+
     while (!window.grist || !grist.setCursor) {
+      console.log("RapidShade: Waiting for grist...");
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
@@ -18,7 +19,10 @@
     if (match) {
       const [_, table, rowIdStr] = match;
       const rowId = parseInt(rowIdStr, 10);
-      console.log(`RapidShade: Navigating to ${table}, row ${rowId}`);
+      console.log(`RapidShade: Parsed table=${table}, row=${rowId}`);
+
+      // Extra delay to allow page layout
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       try {
         await grist.setCursor(table, rowId);
@@ -27,7 +31,7 @@
         console.error("RapidShade: Error setting cursor", err);
       }
     } else {
-      console.log("RapidShade: No valid hash format for navigation");
+      console.warn("RapidShade: No matching navigation hash");
     }
   });
 </script>
