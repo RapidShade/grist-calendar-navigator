@@ -1,63 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script>
-  console.log("RapidShade: Navigator Listener v1.02");
-
-  let gristAPI = null;
-
-  window.addEventListener("message", (event) => {
-    if (event.data && event.data.gristDocAPI) {
-      gristAPI = event.data.gristDocAPI;
-      console.log("RapidShade: Grist API injected");
-
-      setTimeout(() => {
-        const hash = window.location.hash;
-        console.log("RapidShade: Current hash is", hash);
-        const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):([0-9]+)$/);
-        if (!match) {
-          console.warn("RapidShade: No matching navigation hash");
-          return;
-        }
-
-        const [_, table, rowIdStr] = match;
-        const rowId = parseInt(rowIdStr, 10);
-        console.log(`RapidShade: Parsed table=${table}, row=${rowId}`);
-
-        // Try to set the cursor with retries
-        let attempts = 0;
-        const maxAttempts = 20;
-        const interval = 300;
-
-        const trySetCursor = () => {
-          if (!gristAPI) return;
-
-          gristAPI.setCursor(table, rowId)
-            .then(() => {
-              console.log("RapidShade: Cursor set successfully");
-            })
-            .catch((err) => {
-              attempts++;
-              if (attempts < maxAttempts) {
-                console.log(`RapidShade: Retry ${attempts} - section not ready yet`);
-                setTimeout(trySetCursor, interval);
-              } else {
-                console.error("RapidShade: Failed to set cursor after multiple attempts", err);
-              }
-            });
-        };
-
-        trySetCursor();
-      }, 500); // Initial delay before parsing hash
-    }
-  });
-
-  // Ask parent for gristDocAPI
-  window.parent.postMessage({type: 'gristDocAPI'}, '*');
-</script>
-
+  <meta charset="UTF-8">
+  <title>Grist Navigator Listener</title>
 </head>
 <body>
   <p>Navigation listener loaded.</p>
+
+  <script>
+    console.log("RapidShade: Navigator Listener v1.10");
+
+    let gristAPI = null;
+
+    function tryNavigate() {
+      const hash = window.location.hash;
+      console.log("RapidShade: Current hash is", hash);
+      const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):([0-9]+)$/);
+      if (match) {
+        const [_, table, rowIdStr] = match;
+        const rowId = parseInt(rowIdStr, 10);
+        console.log(`RapidShade: Parsed table=${table}, row=${rowId}`);
+        if (gristAPI) {
+          gristAPI.setCursor(table, rowId)
+            .then(() => console.log("RapidShade: Cursor set successfully"))
+            .catch(err => console.error("RapidShade: Error setting cursor", err));
+        } else {
+          console.warn("RapidShade: gristAPI not ready yet, retrying...");
+          setTimeout(tryNavigate, 300);  // Retry a bit later
+        }
+      } else {
+        console.warn("RapidShade: No matching navigation hash");
+      }
+    }
+
+    // Listen for injection of the Grist API
+    window.addEventListener("message", (event) => {
+      if (event.data && event.data.gristDocAPI) {
+        gristAPI = event.data.gristDocAPI;
+        console.log("RapidShade: Grist API injected");
+
+        // Wait a bit for page to render, then attempt navigation
+        setTimeout(tryNavigate, 300);
+      }
+    });
+
+    // Trigger API injection request
+    window.parent.postMessage({type: 'gristDocAPI'}, '*');
+  </script>
 </body>
 </html>
