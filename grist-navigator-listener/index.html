@@ -6,38 +6,43 @@
 </head>
 <body>
 <script>
-  console.log("🔁 Loading Grist Navigator Listener v2.31");
+  console.log("🔁 Loading Grist Navigator Listener v2.32");
 
-  // Request gristDocAPI
-  function requestGristAPI() {
-    console.log("📡 Requesting gristDocAPI via postMessage...");
-    parent.postMessage({ type: "grist", message: "requestAPI" }, "*");
-  }
+  // Setup a promise to wait for the grist API
+  const getGristApi = new Promise((resolve, reject) => {
+    let attempts = 0;
 
-  function waitForGristAPI(callback) {
+    function requestAPI() {
+      if (attempts++ > 30) {
+        reject("❌ Grist API not received after multiple attempts.");
+        return;
+      }
+      console.log("📡 Requesting gristDocAPI via postMessage...");
+      window.parent.postMessage({type: "grist", message: "requestAPI"}, "*");
+    }
+
+    // Listen for Grist response
     window.addEventListener("message", (event) => {
-      const data = event.data;
-      if (data && data.type === "grist" && data.api) {
+      if (event.data && event.data.type === "grist" && event.data.api) {
         console.log("✅ Received gristDocAPI via postMessage");
-        callback(data.api);
+        resolve(event.data.api);
       }
     });
 
-    // Repeatedly send request in case first is dropped
-    let tries = 0;
-    const interval = setInterval(() => {
-      if (tries++ > 20) return clearInterval(interval);
-      requestGristAPI();
-    }, 500);
-  }
+    // Request repeatedly (in case first message is missed)
+    const interval = setInterval(requestAPI, 500);
+    setTimeout(() => clearInterval(interval), 16000);  // Stop after 16s
+  });
 
-  waitForGristAPI((api) => {
-    // Now you can use api.setCursor(), etc.
-    console.log("📌 Ready to navigate using received API");
+  getGristApi.then((api) => {
+    console.log("📌 Grist API ready");
 
-    // Example:
-    api.setCursor('EVENTS', 9);
+    // Example: Navigate to table EVENTS, rowId 9
+    api.setCursor("EVENTS", 9);
+  }).catch((err) => {
+    console.error(err);
   });
 </script>
+
 </body>
 </html>
