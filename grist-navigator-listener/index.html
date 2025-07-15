@@ -1,46 +1,51 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Grist Navigator Listener</title>
-  <script type="module">
-    console.clear();
-    console.log("🔁 Loading Grist Navigator Listener v2.21");
-
-    window.addEventListener("message", (event) => {
-      console.log("📩 Received message:", event.data);
-    });
-
-    function waitForGristAPI() {
-      return new Promise((resolve) => {
-        const check = () => {
-          if (window.grist) {
-            console.log("✅ gristDocAPI is available");
-            resolve(window.grist);
-          } else {
-            console.log("⏳ Waiting for gristDocAPI...");
-            requestAnimationFrame(check);
-          }
-        };
-        check();
-      });
-    }
-
-    async function initialize() {
-      const grist = await waitForGristAPI();
-      grist.onRecord(() => {
-        console.log("📌 Record changed in master view");
-      });
-
-      grist.ready();
-    }
-
-    initialize().catch(console.error);
-  </script>
 </head>
 <body>
-  <h2>Grist Navigator Listener v2.21</h2>
-  <p>Listening for parent events and watching record changes...</p>
+  <script>
+    console.log("🔁 Loading Grist Navigator Listener v2.22");
+
+    async function getGristDocAPI() {
+      if (window.grist) {
+        console.log("✅ gristDocAPI available via window.grist (inline mode)");
+        return window.grist;
+      }
+
+      return new Promise((resolve) => {
+        console.log("⏳ Waiting for gristDocAPI via postMessage (iframe mode)...");
+        window.addEventListener("message", function handler(event) {
+          if (event.data && event.data.gristDocAPI) {
+            console.log("✅ gristDocAPI received via postMessage");
+            window.removeEventListener("message", handler);
+            resolve(event.data.gristDocAPI);
+          }
+        });
+
+        window.parent?.postMessage({ type: "getGristDocAPI" }, "*");
+      });
+    }
+
+    (async () => {
+      const grist = await getGristDocAPI();
+
+      grist.onRecord(function(record) {
+        console.log("📡 Received record:", record);
+
+        const target = record.Target1;
+        const key = record.TargetKey1;
+
+        if (target && key !== undefined && key !== null) {
+          const fragment = `#grist-navigate:${target}:${key}`;
+          console.log("🔁 Posting message to parent:", fragment);
+          window.parent?.postMessage(fragment, "*");
+        } else {
+          console.warn("⚠️ No valid Target1 or TargetKey1 in record:", record);
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
