@@ -1,0 +1,6 @@
+{
+  // External widget manifest for Grist
+  "name": "grist-navigator-listener",
+  "url": "index.html",
+  "access": "full"
+}
