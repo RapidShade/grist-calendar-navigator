@@ -8,7 +8,7 @@
   <p>Navigation listener loaded.</p>
 
   <script type="module">
-    console.log("RapidShade: Navigator Listener v1.21");
+    console.log("RapidShade: Navigator Listener v1.30");
 
     let gristAPI = null;
 
@@ -56,6 +56,16 @@
     setTimeout(tryRequestAPI, 500);
     setTimeout(tryRequestAPI, 1000);
     setTimeout(tryRequestAPI, 1500);
+    
+setTimeout(() => {
+  if (gristAPI) {
+    console.log("✅ Calling setCursor on Events from listener");
+    gristAPI.setCursor("Events", 9); // or a valid ID from your table
+  } else {
+    console.warn("❌ gristAPI not injected yet");
+  }
+}, 2000); // 2 seconds after load
+    
   </script>
 </body>
 </html>
