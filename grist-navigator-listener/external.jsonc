@@ -1,6 +1,11 @@
 {
   // External widget manifest for Grist
-  "name": "grist-navigator-listener",
-  "url": "index.html",
-  "access": "full"
+  //"name": "grist-navigator-listener",
+  //"url": "index.html",
+  //"access": "full"
+
+  "path": "grist-navigator-listener/",
+  "name": "Grist Navigator Listener",
+  "optional": false
+
 }
