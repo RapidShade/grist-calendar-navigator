@@ -1,4 +1,4 @@
-console.log("RAPID-ORIG-16_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
+console.log("RAPID-ORIG-20_RapidShade: page.js version - " + new Date().toLocaleTimeString()); // 
 //const targetUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051/p/28#grist-navigate:EVENTS:" + event.id;
 // to keep all calendar related logic;
 let calendarHandler;
@@ -911,6 +911,7 @@ function showMessageBox(text, type = 'info') {
   setTimeout(() => box.remove(), 5000);
 }
 
+/*
 // Handle redirect hash navigation after page load
 document.addEventListener('DOMContentLoaded', async () => {
   const hash = window.location.hash;
@@ -936,5 +937,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     showMessageBox("No matching grist-navigate hash found.");
   }
+});
+*/
+
+document.addEventListener('dblclick', async (ev) => {
+  if (!ev.target || !calendarHandler.calendar) { return; }
+
+  const eventDom = ev.target.closest("[data-event-id]");
+  if (!eventDom) { return; }
+
+  const eventId = Number(eventDom.dataset.eventId);
+  if (!eventId || Number.isNaN(eventId)) { return; }
+
+  const event = calendarHandler.calendar.getEventModel(eventId, CALENDAR_NAME);
+  if (!event) { return; }
+
+  // Send message to parent Grist container
+  const message = {
+    type: "grist_navigate",
+    tableId: "EVENTS",
+    rowId: event.id
+  };
+
+  console.log("RapidShade: Posting message to parent", message);
+  window.parent.postMessage(message, "*");
 });
 
