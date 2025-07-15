@@ -5,58 +5,36 @@
     // File: navigator-listener.js
     // Description: Tiny Grist plugin widget that reads the grist-navigate hash and moves to the correct record
     
-    (function() {
-      // Helper to extract info from the URL hash
-      function parseGristNavigateHash() {
+      function waitForHashAndNavigate() {
         const hash = window.location.hash;
-        const prefix = '#grist-navigate:';
-        if (!hash.startsWith(prefix)) {
-          console.log('RapidShade: No matching grist-navigate hash found.');
-          return null;
+        console.log("RapidShade: Current hash is", hash);
+        if (!hash || !hash.startsWith("#grist-navigate:")) {
+          requestAnimationFrame(waitForHashAndNavigate);
+          return;
         }
-        const parts = hash.slice(prefix.length).split(':');
-        if (parts.length !== 2) {
-          console.warn('RapidShade: Invalid grist-navigate format');
-          return null;
-        }
-        return {
-          tableId: parts[0],
-          rowId: parseInt(parts[1], 10)
-        };
-      }
-    
-      function clearHash() {
-        history.replaceState('', document.title, window.location.pathname + window.location.search);
-      }
-    
-      window.addEventListener('load', async () => {
-        console.log('RapidShade: Navigator Listener Loaded');
-        const info = parseGristNavigateHash();
-        if (!info) return;
-    
-        // Wait until grist object is available
-        const waitForGrist = new Promise(resolve => {
-          const interval = setInterval(() => {
-            if (window.grist && window.grist.setCursorPos) {
-              clearInterval(interval);
-              resolve(window.grist);
-            }
-          }, 100);
-        });
-    
-        const grist = await waitForGrist;
-        console.log(`RapidShade: Navigating to ${info.tableId} / Row ${info.rowId}`);
-    
-        try {
-          await grist.setCursorPos(info.tableId, info.rowId);
-          console.log('RapidShade: Navigation complete.');
-          clearHash();
-        } catch (err) {
-          console.error('RapidShade: Failed to navigate:', err);
-        }
-      });
-    })();
 
+        const match = hash.match(/^#grist-navigate:([^:]+):(\d+)/);
+        if (!match) {
+          console.log("RapidShade: Hash format invalid");
+          return;
+        }
+
+        const [, table, rowIdStr] = match;
+        const rowId = parseInt(rowIdStr, 10);
+        if (!window.grist || !grist.setCursor) {
+          console.log("RapidShade: grist.setCursor not available yet");
+          requestAnimationFrame(waitForHashAndNavigate);
+          return;
+        }
+
+        console.log(`RapidShade: Navigating to ${table}, row ${rowId}`);
+        grist.setCursor(table, rowId);
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        console.log("RapidShade: Navigator Listener Loaded");
+        requestAnimationFrame(waitForHashAndNavigate);
+      });
   </script>
 </head>
 <body>
