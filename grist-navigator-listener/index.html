@@ -6,53 +6,36 @@
 </head>
 <body style="display:none">
   <script>
-    console.log("🔁 Loading Grist Navigator Listener v2.30");
+    console.log("🔁 Loading Grist Navigator Listener v2.31");
 
     let gristAPI = null;
 
-    // Request Grist API via postMessage
-    function requestGristAPI() {
-      console.log("📡 Requesting gristDocAPI via postMessage...");
-      window.parent.postMessage({ type: "gristDocAPI" }, "*");
-    }
-
-    // Handle message from Grist
-    window.addEventListener("message", (event) => {
-      if (event.data?.gristDocAPI) {
+    // Listen for Grist injecting the API
+    window.addEventListener("message", async (event) => {
+      if (event?.data?.gristDocAPI && !gristAPI) {
         gristAPI = event.data.gristDocAPI;
-        console.log("✅ gristDocAPI injected");
+        console.log("✅ gristDocAPI received");
 
-        handleNavigationHash();
+        const hash = window.location.hash;
+        console.log("🔍 URL hash:", hash);
+        const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):(\d+)$/);
+        if (match) {
+          const [, table, rowStr] = match;
+          const rowId = parseInt(rowStr, 10);
+          console.log(`➡️ Navigating to table: ${table}, row: ${rowId}`);
+          try {
+            await gristAPI.setCursor(table, rowId);
+            console.log("✅ Cursor set!");
+          } catch (err) {
+            console.error("❌ Failed to set cursor:", err);
+          }
+        } else {
+          console.warn("⚠️ Invalid or missing hash.");
+        }
       }
     });
 
-    // Extract hash and call gristAPI.setCursor
-    function handleNavigationHash() {
-      const hash = window.location.hash;
-      console.log("🔎 URL hash:", hash);
-      const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):(\d+)$/);
-      if (match) {
-        const [, table, rowStr] = match;
-        const rowId = parseInt(rowStr, 10);
-        console.log(`➡️ Navigating to ${table} → row ${rowId}`);
-        gristAPI.setCursor(table, rowId)
-          .then(() => console.log("✅ Cursor set successfully"))
-          .catch(err => console.error("❌ Error setting cursor:", err));
-      } else {
-        console.warn("⚠️ No valid #grist-navigate:TABLE:ID hash found.");
-      }
-    }
-
-    // Retry every 500ms until API is received
-    requestGristAPI();
-    const retry = setInterval(() => {
-      if (gristAPI) {
-        clearInterval(retry);
-      } else {
-        console.log("⏳ Waiting for gristDocAPI...");
-        requestGristAPI();
-      }
-    }, 500);
+    console.log("⏳ Waiting for gristDocAPI via postMessage (iframe mode)...");
   </script>
 </body>
 </html>
