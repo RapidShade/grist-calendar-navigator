@@ -1,48 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Grist Navigator Listener</title>
 </head>
 <body>
-<script>
-  console.log("🔁 Loading Grist Navigator Listener v2.32");
+  <script>
+    console.log("🔁 Loading Grist Navigator Listener v3.00");
 
-  // Setup a promise to wait for the grist API
-  const getGristApi = new Promise((resolve, reject) => {
-    let attempts = 0;
+    let gristAPI = null;
 
-    function requestAPI() {
-      if (attempts++ > 30) {
-        reject("❌ Grist API not received after multiple attempts.");
-        return;
+    function parseHash() {
+      const hash = window.location.hash;
+      const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):(\d+)$/);
+      if (match) {
+        return {
+          table: match[1],
+          rowId: parseInt(match[2], 10)
+        };
       }
-      console.log("📡 Requesting gristDocAPI via postMessage...");
-      window.parent.postMessage({type: "grist", message: "requestAPI"}, "*");
+      return null;
     }
 
-    // Listen for Grist response
-    window.addEventListener("message", (event) => {
-      if (event.data && event.data.type === "grist" && event.data.api) {
-        console.log("✅ Received gristDocAPI via postMessage");
-        resolve(event.data.api);
+    function getGristDocAPI() {
+      return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        function requestAPI() {
+          if (window.grist) {
+            console.log("✅ Using window.grist");
+            resolve(window.grist);
+            return;
+          }
+
+          if (attempts >= maxAttempts) {
+            reject("❌ Grist API not received after multiple attempts.");
+            return;
+          }
+
+          window.parent.postMessage({ type: "gristDocAPI" }, "*");
+          attempts++;
+          console.log(`📡 Requesting gristDocAPI via postMessage... (${attempts})`);
+
+          setTimeout(requestAPI, 1000);
+        }
+
+        window.addEventListener("message", (event) => {
+          if (event.data && event.data.gristDocAPI) {
+            console.log("✅ gristDocAPI received via postMessage");
+            resolve(event.data.gristDocAPI);
+          }
+        });
+
+        requestAPI();
+      });
+    }
+
+    (async function init() {
+      try {
+        gristAPI = await getGristDocAPI();
+
+        const nav = parseHash();
+        if (nav) {
+          console.log(`📌 Navigating to ${nav.table}:${nav.rowId}`);
+          await gristAPI.setCursor(nav.table, nav.rowId);
+          console.log("✅ Cursor set successfully.");
+        } else {
+          console.warn("⚠️ No navigation target found in hash.");
+        }
+      } catch (err) {
+        console.error(err);
       }
-    });
-
-    // Request repeatedly (in case first message is missed)
-    const interval = setInterval(requestAPI, 500);
-    setTimeout(() => clearInterval(interval), 16000);  // Stop after 16s
-  });
-
-  getGristApi.then((api) => {
-    console.log("📌 Grist API ready");
-
-    // Example: Navigate to table EVENTS, rowId 9
-    api.setCursor("EVENTS", 9);
-  }).catch((err) => {
-    console.error(err);
-  });
-</script>
-
+    })();
+  </script>
 </body>
 </html>
