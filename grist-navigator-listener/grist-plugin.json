@@ -1,0 +1,6 @@
+{
+  "name": "Grist Navigator Listener",
+  "url": "grist-navigator-listener/index.html",
+  "access": "full",
+  "sandbox": "allow-scripts"
+}
