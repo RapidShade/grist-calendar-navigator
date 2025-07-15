@@ -1,51 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Navigator Listener</title>
+  <style>body { display: none; }</style>
+</head>
+<body>
 <script>
-  console.log("RapidShade: Navigator Listener v1.51");
+  console.log("RapidShade: Navigator Listener v1.60");
 
-  function attemptCursor() {
+  window.addEventListener("message", async (event) => {
+    if (!event.data || !event.data.gristDocAPI) return;
+
+    const gristAPI = event.data.gristDocAPI;
+    console.log("RapidShade: ✅ Grist API injected");
+
     const hash = window.location.hash;
     console.log("RapidShade: Current hash is", hash);
+
     const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):([0-9]+)$/);
     if (!match) {
       console.warn("RapidShade: ⚠️ No matching navigation hash");
       return;
     }
 
-    const [, table, rowIdStr] = match;
+    const [_, table, rowIdStr] = match;
     const rowId = parseInt(rowIdStr, 10);
     console.log(`RapidShade: Parsed table=${table}, row=${rowId}`);
 
-    const api = window.grist || null;
-    if (!api || typeof api.setCursor !== "function") {
-      console.error("RapidShade: ❌ No grist API available");
-      return;
+    try {
+      await gristAPI.setCursor(table, rowId);
+      console.log("RapidShade: ✅ Cursor set successfully");
+    } catch (err) {
+      console.error("RapidShade: ❌ Failed to set cursor", err);
     }
+  });
 
-    api.setCursor(table, rowId)
-      .then(() => console.log("RapidShade: ✅ Cursor set successfully"))
-      .catch(err => console.error("RapidShade: ❌ Error setting cursor", err));
-  }
-
-  // 1. Try direct access to Grist API (works in some widget contexts)
-  if (window.grist && typeof window.grist.setCursor === "function") {
-    console.log("RapidShade: 🎯 Found window.grist directly");
-    attemptCursor();
-  } else {
-    // 2. Fallback to postMessage-based injection
-    console.log("RapidShade: 🔁 Posting message to parent");
-    window.parent.postMessage({ type: 'gristDocAPI' }, '*');
-
-    window.addEventListener("message", (event) => {
-      if (event.data && event.data.gristDocAPI) {
-        const injected = event.data.gristDocAPI;
-        if (typeof injected.setCursor === "function") {
-          console.log("RapidShade: ✅ Grist API injected via message");
-          injected.setCursor = injected.setCursor.bind(injected); // bind safety
-          window.grist = injected;
-          attemptCursor();
-        } else {
-          console.error("RapidShade: ❌ Injected API missing setCursor");
-        }
-      }
-    });
-  }
+  console.log("RapidShade: 🔁 Requesting gristDocAPI");
+  window.parent.postMessage({ type: 'gristDocAPI' }, '*');
 </script>
+</body>
+</html>
