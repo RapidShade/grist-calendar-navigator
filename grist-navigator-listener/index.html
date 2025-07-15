@@ -33,6 +33,10 @@
       }
     });
 
+    window.addEventListener("message", (event) => {
+  console.log("Message received:", event.data);
+  });
+
     setTimeout(() => {
       console.log("🔁 Requesting gristDocAPI from parent");
       window.parent.postMessage({ type: "gristDocAPI" }, "*");
