@@ -885,38 +885,56 @@ document.addEventListener('dblclick', async (ev) => {
 
   
 // Redirect to parent window using window.top, include encoded row info
-  const targetUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051/p/28#grist-navigate:EVENTS:" + event.id;
+  const targetUrl = "https://your-grist-instance.example.com/doc/YOUR_DOC_ID/p/28#grist-navigate:EVENTS:" + event.id;
   window.top.location.href = targetUrl;
 
 });
 
 
 
-// If redirected with a hash like #grist-navigate:EVENTS:123, select that record on load
+// Create a temporary on-screen message box for debugging
+function showMessageBox(text, type = 'info') {
+  const box = document.createElement('div');
+  box.textContent = "RapidShade: " + text;
+  box.style.position = 'fixed';
+  box.style.bottom = '20px';
+  box.style.right = '20px';
+  box.style.zIndex = '9999';
+  box.style.padding = '12px 16px';
+  box.style.backgroundColor = type === 'error' ? '#b00020' : '#007bff';
+  box.style.color = 'white';
+  box.style.fontFamily = 'sans-serif';
+  box.style.fontSize = '14px';
+  box.style.borderRadius = '6px';
+  box.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 5000);
+}
+
+// Handle redirect hash navigation after page load
 document.addEventListener('DOMContentLoaded', async () => {
   const hash = window.location.hash;
-  console.log("RapidShade: Loaded page with hash:", hash);
+  showMessageBox("Loaded page with hash: " + hash);
   const match = hash.match(/^#grist-navigate:(.+?):(\d+)$/);
   if (match) {
     const [, tableId, rowIdStr] = match;
-    console.log("RapidShade: Parsed hash — tableId:", tableId, "rowId:", rowIdStr);
+    showMessageBox("Parsed: table=" + tableId + ", row=" + rowIdStr);
     const rowId = parseInt(rowIdStr, 10);
     if (!isNaN(rowId)) {
       try {
-        console.log("RapidShade: Waiting for grist.ready...");
         await grist.ready();
-        console.log("RapidShade: Calling grist.setCursorPos...");
+        showMessageBox("Calling grist.setCursorPos...");
         await grist.setCursorPos({rowId, tableId});
-        console.log("RapidShade: Successfully navigated to rowId:", rowId);
+        showMessageBox("Selected rowId " + rowId + " in table " + tableId);
         history.replaceState(null, '', window.location.pathname);
       } catch (err) {
-        console.error("RapidShade: Error setting cursor position:", err);
+        showMessageBox("Error: " + err.message, 'error');
       }
     } else {
-      console.warn("RapidShade: Invalid rowId in hash:", rowIdStr);
+      showMessageBox("Invalid rowId in hash: " + rowIdStr, 'error');
     }
   } else {
-    console.log("RapidShade: No matching grist-navigate hash found.");
+    showMessageBox("No matching grist-navigate hash found.");
   }
 });
 
