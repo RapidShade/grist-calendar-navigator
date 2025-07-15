@@ -2,39 +2,38 @@
 <html>
 <head>
 <script>
-  console.log("RapidShade: Navigator Listener v 0.5");
+  console.log("RapidShade: Navigator Listener v 0.6");
 
-  window.addEventListener("load", async () => {
-    console.log("RapidShade: Window load triggered");
+  let gristAPI = null;
 
-    while (!window.grist || !grist.setCursor) {
-      console.log("RapidShade: Waiting for grist...");
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.gristDocAPI) {
+      gristAPI = event.data.gristDocAPI;
+      console.log("RapidShade: Grist API injected");
 
-    const hash = window.location.hash;
-    console.log("RapidShade: Current hash is", hash);
+      setTimeout(() => {
+        const hash = window.location.hash;
+        console.log("RapidShade: Current hash is", hash);
+        const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):([0-9]+)$/);
+        if (match) {
+          const [_, table, rowIdStr] = match;
+          const rowId = parseInt(rowIdStr, 10);
+          console.log(`RapidShade: Parsed table=${table}, row=${rowId}`);
 
-    const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):([0-9]+)$/);
-    if (match) {
-      const [_, table, rowIdStr] = match;
-      const rowId = parseInt(rowIdStr, 10);
-      console.log(`RapidShade: Parsed table=${table}, row=${rowId}`);
-
-      // Extra delay to allow page layout
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      try {
-        await grist.setCursor(table, rowId);
-        console.log("RapidShade: Cursor set successfully");
-      } catch (err) {
-        console.error("RapidShade: Error setting cursor", err);
-      }
-    } else {
-      console.warn("RapidShade: No matching navigation hash");
+          gristAPI.setCursor(table, rowId)
+            .then(() => console.log("RapidShade: Cursor set successfully"))
+            .catch(err => console.error("RapidShade: Error setting cursor", err));
+        } else {
+          console.warn("RapidShade: No matching navigation hash");
+        }
+      }, 500); // Wait a bit to allow page layout
     }
   });
+
+  // Actively request the API
+  window.parent.postMessage({type: 'gristDocAPI'}, '*');
 </script>
+
 </head>
 <body>
   <p>Navigation listener loaded.</p>
