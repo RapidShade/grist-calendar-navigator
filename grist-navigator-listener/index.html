@@ -1,47 +1,46 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <title>Grist Navigator Listener</title>
-</head>
-<body style="display:none">
-  <script>
-    console.log("RapidShade: Navigator Listener v2.20");
-
-    let gristAPI = null;
-
-    function tryCursorNavigation(api) {
-      const hash = window.location.hash;
-      const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):(\d+)$/);
-      if (match) {
-        const [, table, rowIdStr] = match;
-        const rowId = parseInt(rowIdStr, 10);
-        console.log(`RapidShade: Navigating to ${table}:${rowId}`);
-        api.setCursor(table, rowId)
-          .then(() => console.log("✅ Cursor set"))
-          .catch(err => console.error("❌ Failed to set cursor", err));
-      } else {
-        console.warn("⚠️ No valid grist-navigate hash");
-      }
-    }
+  <script type="module">
+    console.clear();
+    console.log("🔁 Loading Grist Navigator Listener v2.21");
 
     window.addEventListener("message", (event) => {
-      if (event.data && event.data.gristDocAPI) {
-        gristAPI = event.data.gristDocAPI;
-        console.log("✅ gristDocAPI received");
-        tryCursorNavigation(gristAPI);
-      }
+      console.log("📩 Received message:", event.data);
     });
 
-    window.addEventListener("message", (event) => {
-  console.log("Message received:", event.data);
-  });
+    function waitForGristAPI() {
+      return new Promise((resolve) => {
+        const check = () => {
+          if (window.grist) {
+            console.log("✅ gristDocAPI is available");
+            resolve(window.grist);
+          } else {
+            console.log("⏳ Waiting for gristDocAPI...");
+            requestAnimationFrame(check);
+          }
+        };
+        check();
+      });
+    }
 
-    setTimeout(() => {
-      console.log("🔁 Requesting gristDocAPI from parent");
-      window.parent.postMessage({ type: "gristDocAPI" }, "*");
-    }, 100);
+    async function initialize() {
+      const grist = await waitForGristAPI();
+      grist.onRecord(() => {
+        console.log("📌 Record changed in master view");
+      });
+
+      grist.ready();
+    }
+
+    initialize().catch(console.error);
   </script>
+</head>
+<body>
+  <h2>Grist Navigator Listener v2.21</h2>
+  <p>Listening for parent events and watching record changes...</p>
 </body>
 </html>
-
