@@ -1,41 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script>
-    // File: navigator-listener.js
-    // Description: Tiny Grist plugin widget that reads the grist-navigate hash and moves to the correct record
-    console.log("RapidShade: Listener v0.3", hash);
-      function waitForHashAndNavigate() {
-        const hash = window.location.hash;
-        console.log("RapidShade: Current hash is", hash);
-        if (!hash || !hash.startsWith("#grist-navigate:")) {
-          requestAnimationFrame(waitForHashAndNavigate);
-          return;
-        }
+<script>
+  console.log("RapidShade: Navigator Listener v 0.4");
+  window.addEventListener("load", async () => {
+    console.log("RapidShade: Navigator Listener Loaded");
 
-        const match = hash.match(/^#grist-navigate:([^:]+):(\d+)/);
-        if (!match) {
-          console.log("RapidShade: Hash format invalid");
-          return;
-        }
+    // Wait until `grist` is available
+    while (!window.grist || !grist.setCursor) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
 
-        const [, table, rowIdStr] = match;
-        const rowId = parseInt(rowIdStr, 10);
-        if (!window.grist || !grist.setCursor) {
-          console.log("RapidShade: grist.setCursor not available yet");
-          requestAnimationFrame(waitForHashAndNavigate);
-          return;
-        }
+    const hash = window.location.hash;
+    console.log("RapidShade: Current hash is", hash);
 
-        console.log(`RapidShade: Navigating to ${table}, row ${rowId}`);
-        grist.setCursor(table, rowId);
+    const match = hash.match(/^#grist-navigate:([A-Za-z0-9_]+):([0-9]+)$/);
+    if (match) {
+      const [_, table, rowIdStr] = match;
+      const rowId = parseInt(rowIdStr, 10);
+      console.log(`RapidShade: Navigating to ${table}, row ${rowId}`);
+
+      try {
+        await grist.setCursor(table, rowId);
+        console.log("RapidShade: Cursor set successfully");
+      } catch (err) {
+        console.error("RapidShade: Error setting cursor", err);
       }
-
-      window.addEventListener("DOMContentLoaded", () => {
-        console.log("RapidShade: Navigator Listener Loaded");
-        requestAnimationFrame(waitForHashAndNavigate);
-      });
-  </script>
+    } else {
+      console.log("RapidShade: No valid hash format for navigation");
+    }
+  });
+</script>
 </head>
 <body>
   <p>Navigation listener loaded.</p>
