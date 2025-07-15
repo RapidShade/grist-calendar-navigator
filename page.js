@@ -885,7 +885,7 @@ document.addEventListener('dblclick', async (ev) => {
 
   
 // Redirect to parent window using window.top, include encoded row info
-  const targetUrl = "https://your-grist-instance.example.com/doc/YOUR_DOC_ID/p/28#grist-navigate:EVENTS:" + event.id;
+  const targetUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051/p/28#grist-navigate:EVENTS:" + event.id;
   window.top.location.href = targetUrl;
 
 });
