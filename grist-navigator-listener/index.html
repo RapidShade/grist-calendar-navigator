@@ -5,47 +5,48 @@
   <title>Grist Navigator Listener</title>
 </head>
 <body>
-  <script>
-    console.log("🔁 Loading Grist Navigator Listener v2.22");
+<script>
+  console.log("🔁 Loading Grist Navigator Listener v2.23");
 
-    async function getGristDocAPI() {
-      if (window.grist) {
-        console.log("✅ gristDocAPI available via window.grist (inline mode)");
-        return window.grist;
-      }
-
-      return new Promise((resolve) => {
-        console.log("⏳ Waiting for gristDocAPI via postMessage (iframe mode)...");
-        window.addEventListener("message", function handler(event) {
-          if (event.data && event.data.gristDocAPI) {
-            console.log("✅ gristDocAPI received via postMessage");
-            window.removeEventListener("message", handler);
-            resolve(event.data.gristDocAPI);
-          }
-        });
-
-        window.parent?.postMessage({ type: "getGristDocAPI" }, "*");
-      });
+  async function getGristDocAPI() {
+    if (window.grist) {
+      console.log("✅ gristDocAPI available via window.grist (inline mode)");
+      return window.grist;
     }
 
-    (async () => {
-      const grist = await getGristDocAPI();
-
-      grist.onRecord(function(record) {
-        console.log("📡 Received record:", record);
-
-        const target = record.Target1;
-        const key = record.TargetKey1;
-
-        if (target && key !== undefined && key !== null) {
-          const fragment = `#grist-navigate:${target}:${key}`;
-          console.log("🔁 Posting message to parent:", fragment);
-          window.parent?.postMessage(fragment, "*");
-        } else {
-          console.warn("⚠️ No valid Target1 or TargetKey1 in record:", record);
+    return new Promise((resolve) => {
+      console.log("⏳ Waiting for gristDocAPI via postMessage (iframe mode)...");
+      window.addEventListener("message", function handler(event) {
+        if (event.data && event.data.gristDocAPI) {
+          console.log("✅ gristDocAPI received via postMessage");
+          window.removeEventListener("message", handler);
+          resolve(event.data.gristDocAPI);
         }
       });
-    })();
-  </script>
+
+      // Trigger response from parent
+      window.parent?.postMessage({ type: "getGristDocAPI" }, "*");
+    });
+  }
+
+  (async () => {
+    const grist = await getGristDocAPI();
+
+    grist.onRecord((record) => {
+      console.log("📡 Received record:", record);
+
+      const target = record.Target1;
+      const key = record.TargetKey1;
+
+      if (target && key !== undefined && key !== null) {
+        const fragment = `#grist-navigate:${target}:${key}`;
+        console.log("🔁 Posting message to parent:", fragment);
+        window.parent?.postMessage(fragment, "*");
+      } else {
+        console.warn("⚠️ No valid Target1 or TargetKey1 in record:", record);
+      }
+    });
+  })();
+</script>
 </body>
 </html>
