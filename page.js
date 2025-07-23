@@ -1013,24 +1013,20 @@ document.addEventListener('dblclick', async (ev) => {
   const eventId = Number(evEl.dataset.eventId);
   if (!eventId || isNaN(eventId)) { return; }
 
-  // 1) prime the hidden Master table selection:
+  // 1) Prime the hidden Master table:
   await grist.setSelectedRows({ tableId: 'Events', rowIds: [eventId] });
 
-  // 2) build the redirect URL from document.referrer:
-  const ref = document.referrer;
-  try {
-    const par = new URL(ref);
-    // capture the “/…/p/<currentPage>” segment:
-    const m = par.pathname.match(/^(\/[^]+?\/p\/\d+)/);
-    const basePath = m ? m[1] : '';
-    // replace the /p/<old> with /p/38 (your target page):
-    const detailPath = basePath.replace(/\/p\/\d+$/, '/p/38');
-    // navigate with the built-in hash anchor:
-    window.top.location.href = `${par.origin}${detailPath}#grist-navigate:EVENTS:${eventId}`;
-  } catch(err) {
-    console.error("Cannot parse referrer for navigation:", err);
-  }
+  // 2) Navigate by assigning the full path + hash:
+  //    (replace these constants with your actual slug and page)
+  const DOC_SLUG  = 'tG8PJVKMxeU6';
+  const DOC_NAME  = 'HSFSportsBudgetv081ACLRPT1';
+  const PAGE_ID   = '38';
+  const tableId   = 'EVENTS';
+  // Build an absolute path from the root of the Grist install:
+  const path = `/${DOC_SLUG}/${DOC_NAME}/p/${PAGE_ID}`;
+  window.top.location.href = `${path}#grist-navigate:${tableId}:${eventId}`;
 });
+
 
 
 
