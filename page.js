@@ -885,7 +885,7 @@ document.addEventListener('dblclick', async (ev) => {
 
   
 // Redirect to parent window using window.top, include encoded row info
-  const targetUrl = "https://sportsledger.koe.org.gr/vgXEoejmmZiN/HSFSportsBudgetv051/p/28#grist-navigate:EVENTS:" + event.id;
+  const targetUrl = "https://sportsledger.koe.org.gr/tG8PJVKMxeU6/HSFSportsBudgetv081ACLRPT1/p/28#grist-navigate:EVENTS:" + event.id;
   window.top.location.href = targetUrl;
 
 });
