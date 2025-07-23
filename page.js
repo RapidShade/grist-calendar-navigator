@@ -940,6 +940,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 */
 
+/*
 document.addEventListener('dblclick', async (ev) => {
   if (!ev.target || !calendarHandler.calendar) { return; }
 
@@ -962,5 +963,27 @@ document.addEventListener('dblclick', async (ev) => {
   console.log("RapidShade: Posting message to parent", message);
   window.parent.postMessage(message, "*");
 });
+*/
+document.addEventListener('dblclick', async (ev) => {
+  if (!ev.target || !calendarHandler.calendar) { return; }
+  const eventDom = ev.target.closest("[data-event-id]");
+  if (!eventDom) { return; }
+  const eventId = Number(eventDom.dataset.eventId);
+  if (!eventId || Number.isNaN(eventId)) { return; }
+  const event = calendarHandler.calendar.getEventModel(eventId, CALENDAR_NAME);
+  if (!event) { return; }
+
+  // 1️⃣ focus this widget (so keyboard shortcuts still work)
+  focusWidget();
+
+  // 2️⃣ move Grist’s cursor to that row
+  await grist.setCursorPos({rowId: event.id});
+
+  // 3️⃣ switch pages—replace "DetailPageId" with your actual page ID
+  await grist.docApi.applyUserActions([
+    ["SetActivePage", "28"],
+  ]);
+});
+
 
 
