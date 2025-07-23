@@ -1008,21 +1008,28 @@ document.addEventListener('dblclick', async (ev) => {
 });
 */
 document.addEventListener('dblclick', async (ev) => {
-  const eventDom = ev.target.closest('[data-event-id]');
-  if (!eventDom) { return; }
-  const eventId = Number(eventDom.dataset.eventId);
-  if (!eventId || Number.isNaN(eventId)) { return; }
+  const evEl = ev.target.closest('[data-event-id]');
+  if (!evEl) { return; }
+  const eventId = Number(evEl.dataset.eventId);
+  if (!eventId || isNaN(eventId)) { return; }
 
-  // 1) Select the hidden table’s row so it’s correct even if the detail page stays loaded
+  // 1) prime the hidden Master table selection:
   await grist.setSelectedRows({ tableId: 'Events', rowIds: [eventId] });
 
-  // 2) Redirect via the #grist-navigate anchor
-  //    - grab the “/p/<docId>” prefix of the current URL:
-  const match = window.top.location.pathname.match(/^(\/.*?\/p\/\d+)/);
-  const base = match ? match[1] : '';
-  //    - build the full URL to your detail page (ID “38”) + the built-in navigate hash:
-  const target = `${base}/p/38#grist-navigate:EVENTS:${eventId}`;
-  window.top.location.href = target;
+  // 2) build the redirect URL from document.referrer:
+  const ref = document.referrer;
+  try {
+    const par = new URL(ref);
+    // capture the “/…/p/<currentPage>” segment:
+    const m = par.pathname.match(/^(\/[^]+?\/p\/\d+)/);
+    const basePath = m ? m[1] : '';
+    // replace the /p/<old> with /p/38 (your target page):
+    const detailPath = basePath.replace(/\/p\/\d+$/, '/p/38');
+    // navigate with the built-in hash anchor:
+    window.top.location.href = `${par.origin}${detailPath}#grist-navigate:EVENTS:${eventId}`;
+  } catch(err) {
+    console.error("Cannot parse referrer for navigation:", err);
+  }
 });
 
 
