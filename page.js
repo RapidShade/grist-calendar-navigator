@@ -885,7 +885,7 @@ document.addEventListener('dblclick', async (ev) => {
 
   
 // Redirect to parent window using window.top, include encoded row info
-  const targetUrl = "https://sportsledger.koe.org.gr/tG8PJVKMxeU6/HSFSportsBudgetv081ACLRPT1/p/28#grist-navigate:EVENTS:" + event.id;
+  const targetUrl = "https://sportsledger.koe.org.gr/tG8PJVKMxeU6/HSFSportsBudgetv081ACLRPT1/p/38#grist-navigate:EVENTS:" + event.id;
   window.top.location.href = targetUrl;
 
 });
@@ -964,6 +964,7 @@ document.addEventListener('dblclick', async (ev) => {
   window.parent.postMessage(message, "*");
 });
 */
+/*
 document.addEventListener('dblclick', async (ev) => {
   if (!ev.target || !calendarHandler.calendar) { return; }
   const eventDom = ev.target.closest("[data-event-id]");
@@ -982,6 +983,26 @@ document.addEventListener('dblclick', async (ev) => {
   // 3️⃣ switch pages—replace "DetailPageId" with your actual page ID
   await grist.docApi.applyUserActions([
     ["SetActivePage", "28"],
+  ]);
+});
+*/
+document.addEventListener('dblclick', async (ev) => {
+  // 1) find the clicked event model as before…
+  const eventDom = ev.target.closest("[data-event-id]");
+  if (!eventDom) { return; }
+  const eventId = Number(eventDom.dataset.eventId);
+  if (!eventId || Number.isNaN(eventId)) { return; }
+  const event = calendarHandler.calendar.getEventModel(eventId, CALENDAR_NAME);
+  if (!event) { return; }
+
+  // 2) First, set the Table widget’s selected row to this ID
+  //    This makes the hidden Master table select that record :contentReference[oaicite:0]{index=0}
+  await grist.setSelectedRows([ event.id ]);
+
+  // 3) Then switch pages to your detail page
+  //    Replace "DetailPageId" with the exact page-ID from your URL
+  await grist.docApi.applyUserActions([
+    ["SetActivePage", "38"],
   ]);
 });
 
