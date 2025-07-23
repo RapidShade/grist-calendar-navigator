@@ -1013,19 +1013,21 @@ document.addEventListener('dblclick', async (ev) => {
   const eventId = Number(evEl.dataset.eventId);
   if (!eventId || isNaN(eventId)) { return; }
 
-  // 1) Prime the hidden Master table:
+  // prime the hidden Master table selection:
   await grist.setSelectedRows({ tableId: 'Events', rowIds: [eventId] });
 
-  // 2) Navigate by assigning the full path + hash:
-  //    (replace these constants with your actual slug and page)
-  const DOC_SLUG  = 'tG8PJVKMxeU6';
-  const DOC_NAME  = 'HSFSportsBudgetv081ACLRPT1';
-  const PAGE_ID   = '38';
-  const tableId   = 'EVENTS';
-  // Build an absolute path from the root of the Grist install:
-  const path = `/${DOC_SLUG}/${DOC_NAME}/p/${PAGE_ID}`;
-  window.top.location.href = `${path}#grist-navigate:${tableId}:${eventId}`;
+  // fully-qualified Grist URL → page 38 + built-in hash navigation:
+  const DOC_HOST = 'https://sportsledger.koe.org.gr';
+  const DOC_SLUG = 'tG8PJVKMxeU6';
+  const DOC_NAME = 'HSFSportsBudgetv081ACLRPT1';
+  const PAGE_ID  = '38';
+  const TABLE_ID = 'EVENTS';
+
+  const targetUrl = `${DOC_HOST}/${DOC_SLUG}/${DOC_NAME}/p/${PAGE_ID}` +
+                    `#grist-navigate:${TABLE_ID}:${eventId}`;
+  window.top.location.href = targetUrl;
 });
+
 
 
 
