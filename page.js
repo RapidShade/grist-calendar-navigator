@@ -986,6 +986,7 @@ document.addEventListener('dblclick', async (ev) => {
   ]);
 });
 */
+/*
 document.addEventListener('dblclick', async (ev) => {
   // 1) find the clicked event model as before…
   const eventDom = ev.target.closest("[data-event-id]");
@@ -1004,6 +1005,24 @@ document.addEventListener('dblclick', async (ev) => {
   await grist.docApi.applyUserActions([
     ["SetActivePage", "38"],
   ]);
+});
+*/
+document.addEventListener('dblclick', async (ev) => {
+  const eventDom = ev.target.closest('[data-event-id]');
+  if (!eventDom) { return; }
+  const eventId = Number(eventDom.dataset.eventId);
+  if (!eventId || Number.isNaN(eventId)) { return; }
+
+  // 1) Select the hidden table’s row so it’s correct even if the detail page stays loaded
+  await grist.setSelectedRows({ tableId: 'Events', rowIds: [eventId] });
+
+  // 2) Redirect via the #grist-navigate anchor
+  //    - grab the “/p/<docId>” prefix of the current URL:
+  const match = window.top.location.pathname.match(/^(\/.*?\/p\/\d+)/);
+  const base = match ? match[1] : '';
+  //    - build the full URL to your detail page (ID “38”) + the built-in navigate hash:
+  const target = `${base}/p/38#grist-navigate:EVENTS:${eventId}`;
+  window.top.location.href = target;
 });
 
 
